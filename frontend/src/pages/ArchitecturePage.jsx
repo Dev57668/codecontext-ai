@@ -276,13 +276,14 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                       <div className="topology-nodes-grid stagger-group">
                         {nodes.map((comp) => {
                           const IconComp = COMPONENT_ICONS[comp.type] || IconLayers;
+                          const activeTarget = hoveredComp || selectedComp;
                           const isSelected = selectedComp?.name === comp.name;
                           const isHovered = hoveredComp?.name === comp.name;
-                          const isConnected = hoveredComp && (
-                            hoveredComp.dependencies?.includes(comp.name) ||
-                            comp.dependencies?.includes(hoveredComp.name)
+                          const isConnected = activeTarget && activeTarget.name !== comp.name && (
+                            activeTarget.dependencies?.includes(comp.name) ||
+                            comp.dependencies?.includes(activeTarget.name)
                           );
-                          const isDimmed = hoveredComp && !isHovered && !isConnected;
+                          const isDimmed = activeTarget && activeTarget.name !== comp.name && !isSelected && !isHovered && !isConnected;
 
                           return (
                             <div

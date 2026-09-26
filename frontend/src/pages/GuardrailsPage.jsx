@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { guardrailsApi } from '../services/api';
+import { guardrailsApi, architectureApi } from '../services/api';
 import { useToast } from '../components/Toast';
 import {
   IconGuardrails,
@@ -19,6 +19,7 @@ import {
 export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
   const [violations, setViolations] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [rules, setRules] = useState([]);
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,12 +35,14 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
     setLoading(true);
     setError(null);
     try {
-      const [v, s] = await Promise.all([
+      const [v, s, r] = await Promise.all([
         guardrailsApi.getViolations(activeRepo.id),
         guardrailsApi.getSummary(activeRepo.id),
+        architectureApi.getRules(activeRepo.id).catch(() => []),
       ]);
       setViolations(v || []);
       setSummary(s);
+      setRules(r || []);
       // Auto-expand all high severity violations initially
       const initialExpanded = new Set();
       v?.forEach((violation) => {
@@ -259,6 +262,76 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
               <span className="badge badge-info">{ignoredCount} ignored</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Active Architectural Rules Policy Table ──────────────── */}
+      <div className="card fade-in" style={{ marginBottom: 20, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>ARCHITECTURAL RULES</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {rules.length} Active System Governance Policies
+            </span>
+          </div>
+          <span className="micro-tag">
+            {openCount} Open Violations
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rules.length > 0 ? (
+            rules.map((rule, idx) => {
+              const ruleName = (rule.rule || '').toLowerCase();
+              const ruleViolations = violations.filter((v) => {
+                const vRule = (v.rule || '').toLowerCase();
+                return vRule.includes(ruleName) || ruleName.includes(vRule);
+              });
+              const count = ruleViolations.filter((v) => v.status === 'open').length;
+
+              return (
+                <div
+                  key={rule.id || idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid var(--border-primary)',
+                    borderRadius: 'var(--radius-xs)',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    transition: 'border-color var(--transition-fast)',
+                  }}
+                  onClick={() => setSearchQuery(rule.rule)}
+                  title={`Click to filter violations by: ${rule.rule}`}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {rule.rule}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>—</span>
+                    <span
+                      className={`badge ${count > 0 ? 'badge-high' : 'badge-low'}`}
+                      style={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}
+                    >
+                      {String(count).padStart(2, '0')} {count === 1 ? 'violation' : 'violations'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '6px 0' }}>
+              System architecture rules active and enforced.
+            </div>
+          )}
         </div>
       </div>
 

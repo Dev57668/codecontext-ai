@@ -116,8 +116,8 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
   const [analysis, setAnalysis] = useState(null);
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState('ide'); // ide | overview | diff | checklist
   const [selectedFileIdx, setSelectedFileIdx] = useState(0);
-  const [activeTab, setActiveTab] = useState('overview'); // overview | diff | findings
   const [checkedQuestions, setCheckedQuestions] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -460,16 +460,16 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
           {/* Navigation Sub-Tabs */}
           <div className="pr-subtabs-row" style={{ marginBottom: 20 }}>
             <button
+              className={`pr-subtab-btn ${activeTab === 'ide' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ide')}
+            >
+              <span>3-Column Review Workspace</span>
+            </button>
+            <button
               className={`pr-subtab-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
               <span>Findings & Violations ({analysis.violations?.length || 0})</span>
-            </button>
-            <button
-              className={`pr-subtab-btn ${activeTab === 'diff' ? 'active' : ''}`}
-              onClick={() => setActiveTab('diff')}
-            >
-              <span>Interactive Diff Viewer ({parsedFiles.length || 1})</span>
             </button>
             <button
               className={`pr-subtab-btn ${activeTab === 'checklist' ? 'active' : ''}`}
@@ -478,6 +478,157 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
               <span>Reviewer Checklist ({analysis.reviewer_questions?.length || 0})</span>
             </button>
           </div>
+
+          {/* ── TAB 0: 3-Column IDE Review Workspace ──────────────────── */}
+          {activeTab === 'ide' && (
+            <div className="pr-workbench-3col fade-in" style={{ marginBottom: 24 }}>
+              {/* LEFT: Changed Files Navigator */}
+              <div className="pr-file-nav-panel">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border-subtle)' }}>
+                  <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>CHANGED FILES</span>
+                  <span className="micro-tag">{parsedFiles.length || 1}</span>
+                </div>
+                <div className="pr-file-list-vertical">
+                  {parsedFiles.map((file, idx) => (
+                    <button
+                      key={idx}
+                      className={`pr-file-list-btn ${selectedFileIdx === idx ? 'active' : ''}`}
+                      onClick={() => setSelectedFileIdx(idx)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                        <IconFileCode size={13} style={{ flexShrink: 0 }} />
+                        <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.path}>
+                          {file.path}
+                        </span>
+                      </div>
+                      <span className="diff-file-counts" style={{ flexShrink: 0 }}>
+                        <span className="count-add">+{file.added}</span>
+                        <span className="count-del">-{file.removed}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CENTER: Code / Diff Canvas */}
+              <div className="diff-viewer-wrapper" style={{ minWidth: 0 }}>
+                <div className="diff-file-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                    <IconFileCode size={15} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
+                    <span className="diff-header-filename" style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                      {currentFile?.path}
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => copyToClipboard(diff)}
+                    title="Copy diff patch"
+                    style={{ fontSize: 11, padding: '3px 8px', flexShrink: 0 }}
+                  >
+                    {copiedCode === diff ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                    <span>{copiedCode === diff ? 'Copied' : 'Copy Patch'}</span>
+                  </button>
+                </div>
+
+                <div className="diff-code-canvas">
+                  {currentFile?.lines?.map((line, idx) => {
+                    const isAdd = line.type === 'add';
+                    const isDel = line.type === 'del';
+                    const isHunk = line.type === 'hunk';
+                    const isMeta = line.type === 'meta';
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`diff-line-row ${
+                          isAdd ? 'line-add' : isDel ? 'line-del' : isHunk ? 'line-hunk' : isMeta ? 'line-meta' : 'line-ctx'
+                        }`}
+                      >
+                        <span className="line-num old-num">{line.oldLine || ''}</span>
+                        <span className="line-num new-num">{line.newLine || ''}</span>
+                        <span className="line-prefix">{isAdd ? '+' : isDel ? '-' : isHunk ? ' ' : ' '}</span>
+                        <span className="line-content">{line.content.replace(/^[+-]/, '')}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RIGHT: Risk, Findings & Suggested Actions Panel */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Score Summary Card */}
+                <div className="card" style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>RISK SCORE</span>
+                    <span className={`badge badge-${analysis.risk_level?.toLowerCase()}`}>
+                      {analysis.risk_level}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontSize: 32, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                      {analysis.risk_score}
+                    </span>
+                    <span style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>/100</span>
+                  </div>
+                  <div className="monochrome-bar" style={{ marginBottom: 10 }}>
+                    <div
+                      className={`monochrome-bar-fill ${analysis.risk_score >= 70 ? 'critical' : 'warning'}`}
+                      style={{ width: `${analysis.risk_score}%` }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                    Gatekeeper Status: <strong style={{ color: '#ffffff' }}>MERGE BLOCKED</strong>
+                  </div>
+                </div>
+
+                {/* Findings List */}
+                <div className="card" style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>KEY FINDINGS</span>
+                    <span className="badge badge-high">{analysis.violations?.length || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                    {analysis.violations?.map((v, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: 8,
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid var(--border-primary)',
+                          borderLeft: '2px solid #ffffff',
+                          borderRadius: 'var(--radius-xs)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                          <span className={`badge badge-${v.severity?.toLowerCase()}`} style={{ fontSize: 9 }}>
+                            {v.severity}
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 600 }}>{v.rule}</span>
+                        </div>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                          {v.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Suggested Actions */}
+                <div className="card" style={{ padding: 16 }}>
+                  <span className="micro-tag" style={{ display: 'block', marginBottom: 8, letterSpacing: '0.12em' }}>
+                    SUGGESTED ACTIONS
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {analysis.suggested_fixes?.slice(0, 3).map((fix, i) => (
+                      <div key={i} style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                        &bull; {fix}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── TAB 1: Overview & Violations ────────────────────────── */}
           {activeTab === 'overview' && (
