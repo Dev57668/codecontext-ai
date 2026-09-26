@@ -72,6 +72,38 @@ const COMPONENT_ICONS = {
   utility: IconLayers,
 };
 
+/**
+ * Resolves whether two components share a direct dependency relationship
+ * using declared dependencies, name matching, and architectural type associations.
+ */
+function checkDependencyConnection(compA, compB) {
+  if (!compA || !compB || compA.name === compB.name) return false;
+
+  const matchesDep = (depString, target) => {
+    if (!depString || !target) return false;
+    const d = depString.toLowerCase().trim();
+    const tName = (target.name || '').toLowerCase().trim();
+    const tType = (target.type || '').toLowerCase().trim();
+
+    // 1. Direct name match (exact or substring)
+    if (tName === d || tName.includes(d) || d.includes(tName)) return true;
+
+    // 2. Type-based match (e.g. "Database" matches database tier components, "External APIs" matches external)
+    if (tType && (tType === d || d.includes(tType) || tType.includes(d))) return true;
+
+    // 3. Significant token match (ignoring common noise words like layer, tier, service)
+    const tokens = d.split(/\s+/).filter((w) => w.length > 2 && !['layer', 'tier', 'service', 'module', 'api', 'apis'].includes(w));
+    if (tokens.some((token) => tName.includes(token) || tType.includes(token))) return true;
+
+    return false;
+  };
+
+  const aDependsOnB = compA.dependencies?.some((dep) => matchesDep(dep, compB));
+  const bDependsOnA = compB.dependencies?.some((dep) => matchesDep(dep, compA));
+
+  return Boolean(aDependsOnB || bDependsOnA);
+}
+
 export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
   const [components, setComponents] = useState([]);
   const [rules, setRules] = useState([]);
@@ -276,19 +308,72 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                       <div className="topology-nodes-grid stagger-group">
                         {nodes.map((comp) => {
                           const IconComp = COMPONENT_ICONS[comp.type] || IconLayers;
-                          const activeTarget = hoveredComp || selectedComp;
                           const isSelected = selectedComp?.name === comp.name;
                           const isHovered = hoveredComp?.name === comp.name;
-                          const isConnected = activeTarget && activeTarget.name !== comp.name && (
-                            activeTarget.dependencies?.includes(comp.name) ||
-                            comp.dependencies?.includes(activeTarget.name)
+
+                          const isConnectedToHovered = Boolean(
+                            hoveredComp && checkDependencyConnection(hoveredComp, comp)
                           );
-                          const isDimmed = activeTarget && activeTarget.name !== comp.name && !isSelected && !isHovered && !isConnected;
+
+                          const isConnectedToSelected = Boolean(
+                            selectedComp && checkDependencyConnection(selectedComp, comp)
+                          );
+
+                          const isConnected = isConnectedToHovered || isConnectedToSelected;
+                          const hasActiveFocus = Boolean(hoveredComp || selectedComp);
+                          const isDimmed = Boolean(
+                            hasActiveFocus &&
+                            !isSelected &&
+                            !isHovered &&
+                            !isConnected
+                          );
+
+                          // Explicit inline visual styling to ensure contrast and unmistakable visibility
+                          let cardStyle = {};
+                          if (isHovered) {
+                            cardStyle = {
+                              borderColor: '#ffffff',
+                              backgroundColor: '#202020',
+                              boxShadow: '0 0 0 2px #ffffff, 0 12px 32px rgba(0, 0, 0, 0.9)',
+                              transform: 'translateY(-3px) scale(1.02)',
+                              opacity: 1,
+                              zIndex: 10,
+                              transition: 'all 0.18s ease-out',
+                            };
+                          } else if (isSelected) {
+                            cardStyle = {
+                              borderColor: '#ffffff',
+                              backgroundColor: '#1c1c1c',
+                              boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.45), 0 8px 24px rgba(0, 0, 0, 0.85)',
+                              opacity: 1,
+                              zIndex: 8,
+                              transition: 'all 0.18s ease-out',
+                            };
+                          } else if (isConnected) {
+                            cardStyle = {
+                              borderColor: 'rgba(255, 255, 255, 0.85)',
+                              backgroundColor: '#181818',
+                              boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6)',
+                              transform: 'translateY(-1px)',
+                              opacity: 1,
+                              zIndex: 6,
+                              transition: 'all 0.18s ease-out',
+                            };
+                          } else if (isDimmed) {
+                            cardStyle = {
+                              opacity: 0.38,
+                              filter: 'grayscale(0.85)',
+                              transform: 'scale(0.98)',
+                              borderColor: 'rgba(255, 255, 255, 0.05)',
+                              transition: 'all 0.18s ease-out',
+                            };
+                          }
 
                           return (
                             <div
                               key={comp.name}
                               className={`topology-node-card ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''} ${isConnected ? 'connected' : ''} ${isDimmed ? 'dimmed' : ''}`}
+                              style={cardStyle}
                               onClick={() => setSelectedComp(comp)}
                               onMouseEnter={() => setHoveredComp(comp)}
                               onMouseLeave={() => setHoveredComp(null)}
@@ -298,8 +383,46 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                                   <div className="topology-node-icon">
                                     <IconComp size={16} />
                                   </div>
-                                  <div>
-                                    <div className="topology-node-title">{comp.name}</div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                      <div className="topology-node-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {comp.name}
+                                      </div>
+                                      {isHovered && (
+                                        <span
+                                          className="micro-tag"
+                                          style={{
+                                            color: '#ffffff',
+                                            borderColor: '#ffffff',
+                                            background: 'rgba(255, 255, 255, 0.18)',
+                                            fontSize: '8px',
+                                            padding: '1px 5px',
+                                            fontWeight: 600,
+                                            letterSpacing: '0.04em',
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          FOCUS
+                                        </span>
+                                      )}
+                                      {isConnectedToHovered && (
+                                        <span
+                                          className="micro-tag"
+                                          style={{
+                                            color: '#ffffff',
+                                            borderColor: 'rgba(255, 255, 255, 0.65)',
+                                            background: 'rgba(255, 255, 255, 0.12)',
+                                            fontSize: '8px',
+                                            padding: '1px 5px',
+                                            fontWeight: 600,
+                                            letterSpacing: '0.04em',
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          CONNECTED
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="badge badge-info" style={{ fontSize: '9px', padding: '1px 5px' }}>
                                       {comp.type}
                                     </span>
