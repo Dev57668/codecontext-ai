@@ -372,11 +372,22 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                           return (
                             <div
                               key={comp.name}
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Inspect ${comp.name} architectural component`}
                               className={`topology-node-card ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''} ${isConnected ? 'connected' : ''} ${isDimmed ? 'dimmed' : ''}`}
                               style={cardStyle}
                               onClick={() => setSelectedComp(comp)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedComp(comp);
+                                }
+                              }}
                               onMouseEnter={() => setHoveredComp(comp)}
                               onMouseLeave={() => setHoveredComp(null)}
+                              onFocus={() => setHoveredComp(comp)}
+                              onBlur={() => setHoveredComp(null)}
                             >
                               <div>
                                 <div className="topology-node-top">

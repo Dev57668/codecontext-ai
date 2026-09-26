@@ -494,28 +494,40 @@ DEMO_PR_ANALYSIS = {
     ],
     "violations": [
         {
+            "file": "src/api/routes/orders.py",
+            "line": 61,
             "rule": "API routes must not directly access the database",
             "severity": "HIGH",
-            "line": 61,
             "description": "Checkout route queries CartItem and creates Order directly via SQLAlchemy session",
+            "explanation": "Bypasses the repository/service layer by executing database queries and commits directly inside the route handler.",
+            "suggested_fix": "Delegate queries to OrderRepository and coordinate persistence via OrderService."
         },
         {
+            "file": "src/api/routes/orders.py",
+            "line": 53,
             "rule": "Secrets must not be hardcoded in source files",
             "severity": "CRITICAL",
-            "line": 53,
             "description": "Live Stripe secret key (sk_live_*) hardcoded as a string literal — this WILL be committed to version control",
+            "explanation": "Stripe API credentials committed directly to source code expose payment infrastructure to unauthorized operations.",
+            "suggested_fix": "Remove hardcoded secret; load from os.getenv('STRIPE_SECRET_KEY') and add to .env.example."
         },
         {
+            "file": "src/api/routes/orders.py",
+            "line": 65,
             "rule": "Payment processing must go through PaymentService",
             "severity": "HIGH",
-            "line": 65,
             "description": "Stripe SDK called directly in route handler instead of delegating to PaymentService",
+            "explanation": "Direct inline calls to external payment providers couple transport handlers to provider-specific SDKs.",
+            "suggested_fix": "Move Stripe calls into PaymentService and inject it as a dependency."
         },
         {
+            "file": "src/api/routes/orders.py",
+            "line": 50,
             "rule": "API routes must validate all input using Pydantic schemas",
             "severity": "HIGH",
-            "line": 50,
             "description": "Route accepts raw dict instead of a typed Pydantic model — no input validation",
+            "explanation": "Untyped dict parameters bypass schema validation, allowing malformed or malicious payload injections.",
+            "suggested_fix": "Create a CheckoutRequest Pydantic model with user_id and cart_id validation."
         },
     ],
     "reviewer_questions": [

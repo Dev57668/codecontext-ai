@@ -31,6 +31,69 @@ RISK_INDICATORS = {
     ],
 }
 
+INDICATOR_METADATA: Dict[str, Dict[str, str]] = {
+    "Hardcoded Stripe key in code": {
+        "explanation": "A Stripe API secret key or live credential was detected in the diff. Committing secret keys to version control risks unauthorized payment access and financial compromise.",
+        "suggested_fix": "Remove the hardcoded key immediately. Load it from environment variables: os.getenv('STRIPE_SECRET_KEY') and add the variable to .env.example.",
+    },
+    "Hardcoded credential": {
+        "explanation": "Hardcoded passwords, secrets, or tokens in source code violate security compliance and risk unauthorized system access if committed.",
+        "suggested_fix": "Store credentials in environment variables (e.g., os.getenv('SECRET_KEY')) or a dedicated secret management vault.",
+    },
+    "Destructive SQL operation": {
+        "explanation": "A destructive SQL statement (DROP TABLE) was detected. Direct table drops can cause irreversible schema deletion, data loss, and downtime.",
+        "suggested_fix": "Manage schema changes using reversible Alembic migrations rather than ad-hoc raw SQL DROP statements.",
+    },
+    "Unsafe eval() call": {
+        "explanation": "eval() executes arbitrary code strings, opening the service to Remote Code Execution (RCE) vulnerabilities if inputs are tainted.",
+        "suggested_fix": "Avoid eval(). Use ast.literal_eval() for safe data deserialization or typed Pydantic models for parsing.",
+    },
+    "Direct database access": {
+        "explanation": "Direct database query or commit calls bypass the repository and service layers, violating separation of concerns and architectural boundaries.",
+        "suggested_fix": "Delegate database queries to the Repository layer and coordinate persistence through the Service layer.",
+    },
+    "Unvalidated request body": {
+        "explanation": "Endpoint accepts an untyped dictionary or calls request.json() directly without schema validation, leaving API vulnerable to malformed payloads.",
+        "suggested_fix": "Define a typed Pydantic BaseModel for the request payload to ensure automatic type checking and payload validation.",
+    },
+    "Inline Stripe integration": {
+        "explanation": "Direct inline third-party SDK calls tightly couple route handlers to payment provider details without centralized error handling or abstraction.",
+        "suggested_fix": "Encapsulate payment operations inside a dedicated PaymentService and inject it via dependency injection.",
+    },
+    "Shell command execution": {
+        "explanation": "Executing shell commands directly risks command injection vulnerabilities if arguments contain unescaped user input.",
+        "suggested_fix": "Use subprocess.run() with shell=False, pass arguments as a list of strings, and sanitize all parameters.",
+    },
+    "Silent exception swallowing": {
+        "explanation": "Catching exceptions with 'except: pass' conceals runtime failures, prevents crash diagnosis, and may leave the system in an inconsistent state.",
+        "suggested_fix": "Catch specific exception types, log error diagnostics using logger.exception(), and handle or re-raise appropriately.",
+    },
+    "Code quality markers present": {
+        "explanation": "Code contains TODO, FIXME, or HACK markers indicating unfinished logic or temporary workarounds in code submitted for review.",
+        "suggested_fix": "Complete the required implementation or track the pending item as an issue ticket prior to merging.",
+    },
+    "Debug print statements in production code": {
+        "explanation": "print() statements output unformatted text to standard out and can leak sensitive payload data into production console logs.",
+        "suggested_fix": "Replace print() with structured logger calls (e.g., logger.info() or logger.debug()).",
+    },
+    "Blocking sleep call": {
+        "explanation": "time.sleep() blocks the server worker thread or event loop, severely degrading concurrent request throughput.",
+        "suggested_fix": "Use await asyncio.sleep() in async functions or offload long-running tasks to background worker queues.",
+    },
+    "Type/lint suppression": {
+        "explanation": "Suppression directives (# noqa, type: ignore) bypass static analysis and can conceal actual type errors or linter defects.",
+        "suggested_fix": "Fix the root typing or linting issue properly rather than silencing static analyzer warnings.",
+    },
+    "Minor code style": {
+        "explanation": "Redundant or chained string normalization operations.",
+        "suggested_fix": "Standardize string input sanitization through a helper or Pydantic validator.",
+    },
+    "Magic number": {
+        "explanation": "Unexplained numeric literals reduce code readability and make maintenance error-prone.",
+        "suggested_fix": "Extract numeric literals into named configuration constants.",
+    },
+}
+
 
 def analyze_pr_diff(
     diff_content: str,
@@ -48,9 +111,8 @@ def analyze_pr_diff(
     Returns:
         Full PR analysis result
     """
-    added_lines = _extract_added_lines(diff_content)
     changed_files = _extract_changed_files(diff_content)
-    violations = _detect_violations(added_lines, diff_content)
+    violations = _detect_violations(diff_content)
     risk_score = _calculate_risk_score(violations, changed_files)
     risk_level = _score_to_level(risk_score)
 
@@ -92,30 +154,82 @@ def _extract_changed_files(diff: str) -> List[str]:
     return files
 
 
-def _detect_violations(added_lines: str, full_diff: str) -> List[Dict]:
-    """Find rule violations in the diff's added lines."""
+def _detect_violations(diff_content: str, full_diff: Optional[str] = None) -> List[Dict]:
+    """Find rule violations in the diff's added lines with file and line traceability."""
+    source_diff = full_diff if full_diff else diff_content
     violations = []
     seen = set()
 
-    for severity, patterns in RISK_INDICATORS.items():
-        for pattern, description in patterns:
-            if re.search(pattern, added_lines, re.IGNORECASE):
-                # Find the line number
-                line_num = None
-                for i, line in enumerate(full_diff.splitlines(), 1):
-                    if line.startswith("+") and re.search(pattern, line, re.IGNORECASE):
-                        line_num = i
-                        break
+    current_file = None
+    current_target_line = 1
+    lines_metadata = []
 
-                key = description
-                if key not in seen:
-                    seen.add(key)
-                    violations.append({
-                        "rule": description,
-                        "severity": severity,
-                        "line": line_num,
-                        "description": description,
-                    })
+    for diff_idx, line in enumerate(source_diff.splitlines(), 1):
+        if line.startswith("diff --git"):
+            match = re.search(r"diff --git a/.+ b/(.+)", line)
+            if match:
+                current_file = match.group(1).strip()
+            continue
+        if line.startswith("+++ b/"):
+            fname = line[6:].strip()
+            if fname != "/dev/null":
+                current_file = fname
+            continue
+        if line.startswith("@@"):
+            match = re.search(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+            if match:
+                current_target_line = int(match.group(1))
+            continue
+
+        if line.startswith("+") and not line.startswith("+++"):
+            added_text = line[1:]
+            lines_metadata.append((diff_idx, current_file or "patch", current_target_line, added_text))
+            current_target_line += 1
+        elif line.startswith("-") and not line.startswith("---"):
+            pass
+        else:
+            current_target_line += 1
+
+    # Fallback if no hunks were recognized
+    if not lines_metadata and source_diff.strip():
+        for diff_idx, line in enumerate(source_diff.splitlines(), 1):
+            if line.startswith("+") and not line.startswith("+++"):
+                lines_metadata.append((diff_idx, "patch", diff_idx, line[1:]))
+            elif not line.startswith("-"):
+                lines_metadata.append((diff_idx, "patch", diff_idx, line))
+
+    # Scan each added line against RISK_INDICATORS
+    for diff_idx, file_path, target_line, added_text in lines_metadata:
+        line_has_stripe = bool(re.search(
+            r"STRIPE_KEY\s*=\s*['\"][^'\"]+['\"]|sk_live_[A-Za-z0-9_]+|DEMO_STRIPE_KEY",
+            added_text,
+            re.IGNORECASE
+        ))
+
+        for severity, patterns in RISK_INDICATORS.items():
+            for pattern, description in patterns:
+                # Deduplication: if line matched a specific Stripe key, suppress generic credential on that line
+                if line_has_stripe and description == "Hardcoded credential":
+                    continue
+
+                if re.search(pattern, added_text, re.IGNORECASE):
+                    key = (file_path, description)
+                    if key not in seen:
+                        seen.add(key)
+                        meta = INDICATOR_METADATA.get(description, {
+                            "explanation": f"Detected {description.lower()} which violates security/architecture standards.",
+                            "suggested_fix": "Refactor according to project architecture guidelines.",
+                        })
+                        violations.append({
+                            "rule": description,
+                            "severity": severity,
+                            "file": file_path,
+                            "line": target_line,
+                            "diff_line": diff_idx,
+                            "description": description,
+                            "explanation": meta["explanation"],
+                            "suggested_fix": meta["suggested_fix"],
+                        })
 
     return violations
 
@@ -209,14 +323,26 @@ def _generate_fixes(violations: List[Dict]) -> List[str]:
         "Hardcoded credential": (
             "Replace hardcoded value with os.getenv('VAR_NAME'); add to .env.example"
         ),
+        "Hardcoded Stripe key in code": (
+            "URGENT: Remove the hardcoded Stripe key immediately; load it securely from os.getenv('STRIPE_SECRET_KEY') and add to .env.example"
+        ),
         "Live Stripe key hardcoded in code": (
             "URGENT: Remove the live key immediately; rotate the key in Stripe dashboard; use os.getenv('STRIPE_SECRET_KEY')"
+        ),
+        "Destructive SQL operation": (
+            "Manage schema changes using reversible Alembic migrations rather than ad-hoc raw SQL DROP statements"
+        ),
+        "Unsafe eval() call": (
+            "Avoid eval(). Use ast.literal_eval() for safe data deserialization or typed Pydantic models"
         ),
         "Silent exception swallowing": (
             "Log the exception with appropriate severity before passing or re-raising"
         ),
         "Debug print statements in production code": (
             "Replace print() with structured logging using the project's logger"
+        ),
+        "Blocking sleep call": (
+            "Use await asyncio.sleep() in async functions or offload long-running tasks to background worker queues"
         ),
         "Shell command execution": (
             "Use subprocess.run() with shell=False and validate all inputs"
@@ -228,6 +354,8 @@ def _generate_fixes(violations: List[Dict]) -> List[str]:
         fix = fixes_map.get(v.get("rule", ""), None)
         if not fix:
             fix = fixes_map.get(v.get("description", ""), None)
+        if not fix and v.get("suggested_fix"):
+            fix = v["suggested_fix"]
         if fix and fix not in fixes:
             fixes.append(fix)
 

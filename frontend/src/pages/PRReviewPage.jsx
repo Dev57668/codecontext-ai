@@ -118,6 +118,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState('ide'); // ide | overview | diff | checklist
   const [selectedFileIdx, setSelectedFileIdx] = useState(0);
+  const [focusedLine, setFocusedLine] = useState(null);
   const [checkedQuestions, setCheckedQuestions] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -244,6 +245,31 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
     if (level === 'HIGH') return '#d4d4d4';
     if (level === 'MEDIUM') return '#a3a3a3';
     return '#737373';
+  };
+
+  const handleFocusFinding = (v) => {
+    if (v.file) {
+      const idx = parsedFiles.findIndex(
+        (f) =>
+          f.path.toLowerCase().includes(v.file.toLowerCase()) ||
+          v.file.toLowerCase().includes(f.path.toLowerCase())
+      );
+      if (idx !== -1) {
+        setSelectedFileIdx(idx);
+      }
+    }
+    if (v.line) {
+      setFocusedLine(v.line);
+      setActiveTab('ide');
+      setTimeout(() => {
+        const el =
+          document.getElementById(`diff-line-new-${v.line}`) ||
+          document.getElementById(`diff-line-old-${v.line}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
   };
 
   if (!activeRepo) {
@@ -466,6 +492,12 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
               <span>3-Column Review Workspace</span>
             </button>
             <button
+              className={`pr-subtab-btn ${activeTab === 'diff' ? 'active' : ''}`}
+              onClick={() => setActiveTab('diff')}
+            >
+              <span>Interactive Diff Viewer</span>
+            </button>
+            <button
               className={`pr-subtab-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
@@ -493,7 +525,10 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     <button
                       key={idx}
                       className={`pr-file-list-btn ${selectedFileIdx === idx ? 'active' : ''}`}
-                      onClick={() => setSelectedFileIdx(idx)}
+                      onClick={() => {
+                        setSelectedFileIdx(idx);
+                        setFocusedLine(null);
+                      }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                         <IconFileCode size={13} style={{ flexShrink: 0 }} />
@@ -518,16 +553,32 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     <span className="diff-header-filename" style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
                       {currentFile?.path}
                     </span>
+                    {focusedLine && (
+                      <span className="badge badge-info" style={{ fontSize: 10, marginLeft: 6 }}>
+                        Focusing line {focusedLine}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => copyToClipboard(diff)}
-                    title="Copy diff patch"
-                    style={{ fontSize: 11, padding: '3px 8px', flexShrink: 0 }}
-                  >
-                    {copiedCode === diff ? <IconCheck size={12} /> : <IconCopy size={12} />}
-                    <span>{copiedCode === diff ? 'Copied' : 'Copy Patch'}</span>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {focusedLine && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setFocusedLine(null)}
+                        style={{ fontSize: 10, padding: '2px 8px' }}
+                      >
+                        Clear Highlight
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => copyToClipboard(diff)}
+                      title="Copy diff patch"
+                      style={{ fontSize: 11, padding: '3px 8px', flexShrink: 0 }}
+                    >
+                      {copiedCode === diff ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                      <span>{copiedCode === diff ? 'Copied' : 'Copy Patch'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="diff-code-canvas">
@@ -536,13 +587,15 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     const isDel = line.type === 'del';
                     const isHunk = line.type === 'hunk';
                     const isMeta = line.type === 'meta';
+                    const isLineFocused = focusedLine != null && (line.newLine === focusedLine || line.oldLine === focusedLine);
 
                     return (
                       <div
                         key={idx}
+                        id={line.newLine ? `diff-line-new-${line.newLine}` : line.oldLine ? `diff-line-old-${line.oldLine}` : undefined}
                         className={`diff-line-row ${
                           isAdd ? 'line-add' : isDel ? 'line-del' : isHunk ? 'line-hunk' : isMeta ? 'line-meta' : 'line-ctx'
-                        }`}
+                        } ${isLineFocused ? 'line-focused' : ''}`}
                       >
                         <span className="line-num old-num">{line.oldLine || ''}</span>
                         <span className="line-num new-num">{line.newLine || ''}</span>
@@ -584,30 +637,52 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                 {/* Findings List */}
                 <div className="card" style={{ padding: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>KEY FINDINGS</span>
+                    <span className="micro-tag" style={{ letterSpacing: '0.12em' }}>KEY FINDINGS (CLICK TO FOCUS)</span>
                     <span className="badge badge-high">{analysis.violations?.length || 0}</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
                     {analysis.violations?.map((v, i) => (
                       <div
                         key={i}
+                        onClick={() => handleFocusFinding(v)}
                         style={{
-                          padding: 8,
+                          padding: 10,
                           background: 'rgba(255,255,255,0.02)',
                           border: '1px solid var(--border-primary)',
-                          borderLeft: '2px solid #ffffff',
+                          borderLeft: `3px solid ${
+                            v.severity === 'CRITICAL'
+                              ? '#ffffff'
+                              : v.severity === 'HIGH'
+                              ? 'rgba(255, 255, 255, 0.6)'
+                              : 'rgba(255, 255, 255, 0.3)'
+                          }`,
                           borderRadius: 'var(--radius-xs)',
+                          cursor: 'pointer',
+                          transition: 'all var(--transition-fast)',
                         }}
+                        title={v.line ? `Click to focus on line ${v.line} in diff` : undefined}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 3 }}>
                           <span className={`badge badge-${v.severity?.toLowerCase()}`} style={{ fontSize: 9 }}>
                             {v.severity}
                           </span>
-                          <span style={{ fontSize: 11, fontWeight: 600 }}>{v.rule}</span>
+                          {(v.file || v.line) && (
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+                              {v.line ? `line ${v.line}` : ''}
+                            </span>
+                          )}
                         </div>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
+                          {v.rule}
+                        </div>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4, margin: '0 0 6px 0' }}>
                           {v.description}
                         </p>
+                        {v.suggested_fix && (
+                          <div style={{ fontSize: 10.5, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.03)', padding: '4px 6px', borderRadius: 2 }}>
+                            &bull; {v.suggested_fix}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -658,16 +733,37 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                           }`,
                         }}
                       >
-                        <div className="pr-finding-top">
+                        <div className="pr-finding-top" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <span className={`badge badge-${v.severity?.toLowerCase()}`}>
                             {v.severity}
                           </span>
                           <span className="pr-finding-rule">{v.rule}</span>
+                          {(v.file || v.line) && (
+                            <span className="micro-tag">
+                              {v.file ? `${v.file}${v.line ? `:${v.line}` : ''}` : `line ${v.line}`}
+                            </span>
+                          )}
                           {v.line && (
-                            <span className="micro-tag">line {v.line}</span>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: 10, padding: '2px 8px', marginLeft: 'auto' }}
+                              onClick={() => handleFocusFinding(v)}
+                            >
+                              Focus in Diff
+                            </button>
                           )}
                         </div>
-                        <p className="pr-finding-desc">{v.description}</p>
+                        <p className="pr-finding-desc" style={{ marginBottom: 8 }}>{v.description}</p>
+                        {v.explanation && (
+                          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 8 }}>
+                            <strong style={{ color: 'var(--text-primary)' }}>Impact:</strong> {v.explanation}
+                          </div>
+                        )}
+                        {v.suggested_fix && (
+                          <div className="remediation-box" style={{ marginTop: 6, fontSize: 11 }}>
+                            <code>{v.suggested_fix}</code>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -726,7 +822,10 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                       <button
                         key={idx}
                         className={`diff-file-chip ${selectedFileIdx === idx ? 'active' : ''}`}
-                        onClick={() => setSelectedFileIdx(idx)}
+                        onClick={() => {
+                          setSelectedFileIdx(idx);
+                          setFocusedLine(null);
+                        }}
                       >
                         <IconFileCode size={13} />
                         <span className="diff-file-name">{file.path}</span>
@@ -744,16 +843,32 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <IconFileCode size={15} style={{ color: 'var(--text-primary)' }} />
                     <span className="diff-header-filename">{currentFile?.path}</span>
+                    {focusedLine && (
+                      <span className="badge badge-info" style={{ fontSize: 10, marginLeft: 6 }}>
+                        Focusing line {focusedLine}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => copyToClipboard(diff)}
-                    title="Copy diff to clipboard"
-                    style={{ fontSize: 11, padding: '3px 8px' }}
-                  >
-                    {copiedCode === diff ? <IconCheck size={12} /> : <IconCopy size={12} />}
-                    <span>{copiedCode === diff ? 'Copied' : 'Copy Patch'}</span>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {focusedLine && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setFocusedLine(null)}
+                        style={{ fontSize: 10, padding: '2px 8px' }}
+                      >
+                        Clear Highlight
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => copyToClipboard(diff)}
+                      title="Copy diff to clipboard"
+                      style={{ fontSize: 11, padding: '3px 8px' }}
+                    >
+                      {copiedCode === diff ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                      <span>{copiedCode === diff ? 'Copied' : 'Copy Patch'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Code Lines Display */}
@@ -763,13 +878,15 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     const isDel = line.type === 'del';
                     const isHunk = line.type === 'hunk';
                     const isMeta = line.type === 'meta';
+                    const isLineFocused = focusedLine != null && (line.newLine === focusedLine || line.oldLine === focusedLine);
 
                     return (
                       <div
                         key={idx}
+                        id={line.newLine ? `diff-line-new-${line.newLine}` : line.oldLine ? `diff-line-old-${line.oldLine}` : undefined}
                         className={`diff-line-row ${
                           isAdd ? 'line-add' : isDel ? 'line-del' : isHunk ? 'line-hunk' : isMeta ? 'line-meta' : 'line-ctx'
-                        }`}
+                        } ${isLineFocused ? 'line-focused' : ''}`}
                       >
                         {/* Old line number */}
                         <span className="line-num old-num">

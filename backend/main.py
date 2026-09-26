@@ -58,9 +58,23 @@ app = FastAPI(
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
 
+# Explicit allowed origins for local development and configurable via env for deployment
+_env_origins = os.getenv("CORS_ORIGINS", "")
+if _env_origins:
+    ALLOWED_ORIGINS = [orig.strip() for orig in _env_origins.split(",") if orig.strip()]
+else:
+    ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,6 +85,7 @@ app.add_middleware(
 app.include_router(repository_router)
 app.include_router(architecture_router)
 app.include_router(guardrails_router)
+# Canonical PR Intelligence router mounted for both /api/pr (frontend) and /api/pr-intelligence (tests)
 app.include_router(pr_router, prefix="/api/pr")
 app.include_router(pr_router, prefix="/api/pr-intelligence")
 app.include_router(decisions_router)
@@ -100,11 +115,15 @@ def ping():
 
 # ─── Error Handlers ──────────────────────────────────────────────────────────
 
+import logging
+logger = logging.getLogger("codecontext.api")
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
+    logger.exception(f"Unhandled server error on {request.method} {request.url.path}: {exc}")
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error: {str(exc)}"},
+        content={"detail": "Internal server error"},
     )
 
 

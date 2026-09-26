@@ -20,6 +20,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
   const [violations, setViolations] = useState([]);
   const [summary, setSummary] = useState(null);
   const [rules, setRules] = useState([]);
+  const [selectedRule, setSelectedRule] = useState(null);
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,6 +116,12 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
   // Filtered violations
   const filteredViolations = useMemo(() => {
     return violations.filter((v) => {
+      if (selectedRule) {
+        const vRule = (v.rule || '').toLowerCase();
+        const sRule = (selectedRule.rule || '').toLowerCase();
+        const matchesRule = vRule.includes(sRule) || sRule.includes(vRule);
+        if (!matchesRule) return false;
+      }
       const matchesSeverity =
         severityFilter === 'all' || v.severity === severityFilter;
       const matchesStatus =
@@ -129,7 +136,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
 
       return matchesSeverity && matchesStatus && matchesSearch;
     });
-  }, [violations, severityFilter, statusFilter, searchQuery]);
+  }, [violations, selectedRule, severityFilter, statusFilter, searchQuery]);
 
   const openCount = violations.filter((v) => v.status === 'open').length;
   const resolvedCount = violations.filter((v) => v.status === 'resolved').length;
@@ -289,6 +296,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
               });
               const count = ruleViolations.filter((v) => v.status === 'open').length;
 
+              const isSelected = selectedRule?.rule === rule.rule;
               return (
                 <div
                   key={rule.id || idx}
@@ -297,18 +305,18 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '8px 12px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid var(--border-primary)',
+                    background: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                    border: isSelected ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid var(--border-primary)',
                     borderRadius: 'var(--radius-xs)',
                     fontSize: 12,
                     cursor: 'pointer',
-                    transition: 'border-color var(--transition-fast)',
+                    transition: 'all var(--transition-fast)',
                   }}
-                  onClick={() => setSearchQuery(rule.rule)}
-                  title={`Click to filter violations by: ${rule.rule}`}
+                  onClick={() => setSelectedRule((prev) => (prev?.rule === rule.rule ? null : rule))}
+                  title={isSelected ? 'Click to deselect rule' : `Click to filter violations by: ${rule.rule}`}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
@@ -334,6 +342,54 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
           )}
         </div>
       </div>
+
+      {/* ── Active Rule Filter Banner ────────────────────────────── */}
+      {selectedRule && (
+        <div
+          className="card fade-in"
+          style={{
+            marginBottom: 20,
+            padding: '12px 18px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                background: '#ffffff',
+                color: '#000000',
+                padding: '3px 8px',
+                borderRadius: 'var(--radius-xs)',
+              }}
+            >
+              RULE ACTIVE
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
+              {selectedRule.rule}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Showing {filteredViolations.length} {filteredViolations.length === 1 ? 'violation' : 'violations'}
+            </span>
+          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSelectedRule(null)}
+            style={{ fontSize: 11, padding: '4px 10px' }}
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {/* ── Filter Toolbar ───────────────────────────────────────── */}
       <div className="card fade-in" style={{ marginBottom: 20, padding: '14px 18px' }}>
@@ -589,11 +645,11 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
           </div>
           <h3 style={{ fontSize: 17, marginBottom: 6 }}>All Guardrail Policies Satisfied</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
-            {searchQuery || severityFilter !== 'all' || statusFilter !== 'all'
+            {searchQuery || severityFilter !== 'all' || statusFilter !== 'all' || selectedRule
               ? 'No violations match your current search and filter criteria.'
               : 'Zero active architectural violations detected in the scanned codebase.'}
           </p>
-          {(searchQuery || severityFilter !== 'all' || statusFilter !== 'all') && (
+          {(searchQuery || severityFilter !== 'all' || statusFilter !== 'all' || selectedRule) && (
             <button
               className="btn btn-secondary btn-sm"
               style={{ marginTop: 14 }}
@@ -601,6 +657,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                 setSearchQuery('');
                 setSeverityFilter('all');
                 setStatusFilter('all');
+                setSelectedRule(null);
               }}
             >
               Reset Filters

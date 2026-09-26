@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { API_BASE } from '../services/api';
 import {
   IconRepository,
   IconChevronDown,
@@ -38,7 +39,7 @@ export function TopHeader({ activeRepo, onLoadDemo, loadingDemo, onOpenTour }) {
 
   // Quick check on backend ping
   useEffect(() => {
-    fetch('http://localhost:8000/api/status')
+    fetch(`${API_BASE}/api/status`)
       .then((res) => {
         if (res.ok) setApiOnline(true);
       })

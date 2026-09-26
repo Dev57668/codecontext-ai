@@ -147,6 +147,142 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </button>
         </div>
 
+        {/* Executive Codebase Health & Intelligence Strip */}
+        <div className="grid-6 stagger-group" style={{ marginTop: 28, marginBottom: 4 }}>
+          {/* 1. CODEBASE HEALTH */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/repository')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>Codebase Health</span>
+              <span className={`status-pill ${overallHealth >= 80 ? 'pill-good' : overallHealth >= 60 ? 'pill-warning' : 'pill-critical'}`} style={{ fontSize: 9 }}>
+                {overallHealth >= 80 ? 'HEALTHY' : 'REVIEW'}
+              </span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                {overallHealth}
+                <span className="value-max" style={{ fontSize: 12 }}>/100</span>
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11 }}>{filesCount} files &bull; {locCount} LOC</div>
+            </div>
+          </div>
+
+          {/* 2. GUARDRAIL VIOLATIONS */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/guardrails')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>Guardrail Violations</span>
+              <span className="badge badge-high" style={{ fontSize: 9, padding: '1px 6px' }}>{highViolations} High</span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                {violationCount}
+                <span className="value-max" style={{ fontSize: 12 }}> active</span>
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11, display: 'flex', gap: 6 }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{guardrailSummary?.summary?.HIGH || 3} High</span>
+                <span>&bull;</span>
+                <span>{guardrailSummary?.summary?.MEDIUM || 2} Med</span>
+                <span>&bull;</span>
+                <span>{guardrailSummary?.summary?.LOW || 0} Low</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. ARCHITECTURE COMPONENTS */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/architecture')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>Architecture</span>
+              <span className="micro-tag" style={{ fontSize: 9 }}>5 TIERS</span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                {analysis?.components?.length || 7}
+                <span className="value-max" style={{ fontSize: 12 }}> nodes</span>
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11 }}>{patternCount} design patterns</div>
+            </div>
+          </div>
+
+          {/* 4. PR RISK GATEKEEPER */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/pr-review')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>PR Risk Gatekeeper</span>
+              <span className="badge badge-high" style={{ fontSize: 9, padding: '1px 6px' }}>CRITICAL</span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                87
+                <span className="value-max" style={{ fontSize: 12 }}>/100</span>
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11 }}>Pre-merge AST evaluation</div>
+            </div>
+          </div>
+
+          {/* 5. TECHNICAL DECISIONS */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/decisions')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>Decision Memory</span>
+              <span className="micro-tag" style={{ fontSize: 9 }}>ADR</span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                {effectiveDecisions}
+                <span className="value-max" style={{ fontSize: 12 }}> records</span>
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11 }}>Context reasoning graph</div>
+            </div>
+          </div>
+
+          {/* 6. ONBOARDING STATUS */}
+          <div
+            className="card stat-card fade-in"
+            onClick={() => navigate('/onboarding')}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer', padding: '14px 16px' }}
+          >
+            <div className="stat-card-header" style={{ marginBottom: 6 }}>
+              <span className="card-title" style={{ fontSize: 11 }}>Onboarding Status</span>
+              <span className="status-pill pill-good" style={{ fontSize: 9 }}>READY</span>
+            </div>
+            <div className="stat-card-body">
+              <div className="card-value" style={{ fontSize: 24 }}>
+                4 Paths
+              </div>
+              <div className="card-subtitle" style={{ fontSize: 11 }}>Role-tailored starter plans</div>
+            </div>
+          </div>
+        </div>
+
         {error && (
           <div className="linear-error-banner">
             <span>{error}</span>

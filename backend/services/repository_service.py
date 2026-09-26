@@ -70,16 +70,80 @@ def load_demo_repository(db: Session) -> Repository:
     return repo
 
 
+MAX_EXTRACTED_SIZE = 150 * 1024 * 1024  # 150 MB
+MAX_FILE_COUNT = 10000
+
+
+def validate_scan_path(path_str: str) -> Path:
+    """Validate and sanitize local repository path for scanning."""
+    if not path_str or not path_str.strip():
+        raise ValueError("Repository path cannot be empty")
+
+    resolved = Path(path_str.strip()).resolve()
+    if not resolved.exists() or not resolved.is_dir():
+        raise ValueError(f"Path does not exist or is not a directory: {path_str}")
+
+    resolved_str = str(resolved).lower().replace("\\", "/")
+
+    # Restrict system roots and sensitive OS directories
+    disallowed_roots = [
+        "/", "c:/", "d:/", "e:/",
+        "/etc", "/root", "/bin", "/sbin", "/usr", "/proc", "/sys", "/dev",
+        "c:/windows", "c:/program files", "c:/program files (x86)", "c:/programdata",
+    ]
+
+    if resolved_str in disallowed_roots or resolved_str.rstrip("/") in disallowed_roots:
+        raise ValueError("Cannot scan root filesystem or system directories")
+
+    for root_dir in disallowed_roots:
+        if root_dir.endswith("/"):
+            continue
+        if resolved_str == root_dir or resolved_str.startswith(root_dir + "/"):
+            raise ValueError("Scanning system or protected OS directories is not permitted")
+
+    return resolved
+
+
+def _safe_extract_zip(zf: zipfile.ZipFile, target_dir: str):
+    """Safely extract ZIP file protecting against path traversal and zip bombs."""
+    resolved_target = Path(target_dir).resolve()
+    total_size = 0
+    file_count = 0
+
+    for member in zf.infolist():
+        file_count += 1
+        if file_count > MAX_FILE_COUNT:
+            raise ValueError(f"ZIP contains too many files (maximum allowed is {MAX_FILE_COUNT})")
+
+        total_size += member.file_size
+        if total_size > MAX_EXTRACTED_SIZE:
+            raise ValueError(
+                f"ZIP extracted content exceeds maximum allowed limit ({MAX_EXTRACTED_SIZE // (1024 * 1024)}MB)"
+            )
+
+        name = member.filename
+        # Disallow absolute paths
+        if name.startswith("/") or name.startswith("\\"):
+            raise ValueError(f"Unsafe absolute path in ZIP entry: {name}")
+
+        dest_path = (resolved_target / name).resolve()
+        # Verify target is strictly within the extraction directory
+        if not str(dest_path).startswith(str(resolved_target)):
+            raise ValueError(f"Path traversal detected in ZIP entry: {name}")
+
+    zf.extractall(target_dir)
+
+
 def analyze_local_repository(db: Session, path: str) -> Repository:
     """Scan a local repository path and persist results."""
-    if not os.path.isdir(path):
-        raise ValueError(f"Path does not exist or is not a directory: {path}")
+    resolved_path = validate_scan_path(path)
+    clean_path_str = str(resolved_path)
 
     repo_id = str(uuid.uuid4())
     repo = Repository(
         id=repo_id,
-        name=Path(path).name,
-        path=path,
+        name=resolved_path.name,
+        path=clean_path_str,
         source_type="local",
         status="analyzing",
     )
@@ -88,11 +152,11 @@ def analyze_local_repository(db: Session, path: str) -> Repository:
 
     try:
         # Run scanner
-        scanner = RepositoryScanner(path)
+        scanner = RepositoryScanner(clean_path_str)
         analysis_result = scanner.scan()
 
         # Run guardrail analyzer
-        guardrail_result = GuardrailAnalyzer(path).run()
+        guardrail_result = GuardrailAnalyzer(clean_path_str).run()
 
         # Persist analysis
         repo.analysis_result = analysis_result
@@ -135,11 +199,11 @@ def analyze_local_repository(db: Session, path: str) -> Repository:
 
 
 def analyze_zip_repository(db: Session, zip_path: str) -> Repository:
-    """Extract a ZIP and analyze it as a local repository."""
+    """Extract a ZIP securely, analyze it, and clean up temporary files."""
     temp_dir = tempfile.mkdtemp(prefix="codecontext_")
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(temp_dir)
+            _safe_extract_zip(zf, temp_dir)
 
         # Find the root of the extracted content
         extracted_items = os.listdir(temp_dir)
@@ -149,11 +213,11 @@ def analyze_zip_repository(db: Session, zip_path: str) -> Repository:
             extract_path = temp_dir
 
         repo = analyze_local_repository(db, extract_path)
-        # Update name from ZIP filename
+        # Update name from ZIP filename and tag as zip source
         repo.name = Path(zip_path).stem
         repo.source_type = "zip"
         db.commit()
         return repo
     finally:
-        # Cleanup is best-effort; temp files will be cleaned by OS
-        pass
+        # Secure cleanup of temporary extraction directory
+        shutil.rmtree(temp_dir, ignore_errors=True)

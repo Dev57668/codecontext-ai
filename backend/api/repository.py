@@ -96,9 +96,13 @@ async def upload_repository(
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only ZIP files are supported")
 
+    MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=400, detail="Uploaded file exceeds maximum limit of 50MB")
+
     # Save upload to temp file
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
-        content = await file.read()
         tmp.write(content)
         tmp_path = tmp.name
 
@@ -108,10 +112,13 @@ async def upload_repository(
         repo.name = file.filename.replace(".zip", "")
         db.commit()
         return repo
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload analysis failed: {str(e)}")
     finally:
-        os.unlink(tmp_path)
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 
 @router.delete("/{repo_id}")
