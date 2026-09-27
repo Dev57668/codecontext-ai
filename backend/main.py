@@ -58,19 +58,25 @@ app = FastAPI(
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
 
-# Explicit allowed origins for local development and configurable via env for deployment
+# Default allowed origins: local development servers + verified production Vercel frontend
+DEFAULT_ALLOWED_ORIGINS = [
+    "https://codecontext-ai-tdyp.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Configurable via CORS_ORIGINS environment variable for additional deployment environments
 _env_origins = os.getenv("CORS_ORIGINS", "")
 if _env_origins:
-    ALLOWED_ORIGINS = [orig.strip() for orig in _env_origins.split(",") if orig.strip()]
+    _configured_origins = [orig.strip().rstrip("/") for orig in _env_origins.split(",") if orig.strip()]
+    # Combine configured origins with defaults, eliminating duplicates while preserving order
+    ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + _configured_origins))
 else:
-    ALLOWED_ORIGINS = [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+    ALLOWED_ORIGINS = DEFAULT_ALLOWED_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
