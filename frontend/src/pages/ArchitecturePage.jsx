@@ -146,6 +146,20 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showAddRuleModal) {
+          setShowAddRuleModal(false);
+        } else if (selectedComp) {
+          setSelectedComp(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAddRuleModal, selectedComp]);
+
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
     setCopiedText(text);

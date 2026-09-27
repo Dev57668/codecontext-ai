@@ -302,6 +302,20 @@ const MoltenMetal = ({
     };
     document.addEventListener('visibilitychange', onVisibility);
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      renderer.render({ scene: mesh });
+      return () => {
+        ro.disconnect();
+        ctxMap.delete(container);
+        if (canvas.parentNode === container) container.removeChild(canvas);
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+      };
+    }
+
     tryStart();
 
     return () => {

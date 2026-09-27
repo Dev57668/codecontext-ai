@@ -78,8 +78,12 @@ const TargetCursor = ({
     });
   }, []);
 
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   useEffect(() => {
-    if (isMobile || !cursorRef.current) return;
+    if (isMobile || prefersReducedMotion || !cursorRef.current) return;
 
     const originalCursor = document.body.style.cursor;
     if (hideDefaultCursor) {
@@ -414,7 +418,8 @@ const TargetCursor = ({
     hoverDuration,
     parallaxOn,
     cursorColor,
-    cursorColorOnTarget
+    cursorColorOnTarget,
+    prefersReducedMotion
   ]);
 
   useEffect(() => {
@@ -432,7 +437,7 @@ const TargetCursor = ({
     }
   }, [spinDuration, isMobile]);
 
-  if (isMobile || typeof document === 'undefined') {
+  if (isMobile || prefersReducedMotion || typeof document === 'undefined') {
     return null;
   }
 

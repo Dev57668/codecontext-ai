@@ -103,6 +103,17 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
     loadDecisions();
   }, [loadDecisions]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showExtractModal) setShowExtractModal(false);
+        if (showCreateModal) setShowCreateModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showExtractModal, showCreateModal]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !activeRepo?.id) return;

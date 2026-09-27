@@ -73,6 +73,15 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
     loadHistory();
   }, [loadHistory]);
 
+  useEffect(() => {
+    if (!showHistory) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowHistory(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showHistory]);
+
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!activeRepo?.id) return;

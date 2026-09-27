@@ -89,6 +89,17 @@ export function TourModal({ isOpen, onClose, activeRepo, onLoadDemo, loadingDemo
   const [viewMode, setViewMode] = useState('narrative'); // narrative | grid
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const currentStep = TOUR_STEPS[activeStepIdx];

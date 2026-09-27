@@ -85,9 +85,10 @@ app.add_middleware(
 app.include_router(repository_router)
 app.include_router(architecture_router)
 app.include_router(guardrails_router)
-# Canonical PR Intelligence router mounted for both /api/pr (frontend) and /api/pr-intelligence (tests)
+# Canonical PR Intelligence router for /api/pr (used by frontend)
 app.include_router(pr_router, prefix="/api/pr")
-app.include_router(pr_router, prefix="/api/pr-intelligence")
+# Compatibility router for /api/pr-intelligence (tests/legacy), excluded from OpenAPI schema to prevent duplicate operations
+app.include_router(pr_router, prefix="/api/pr-intelligence", include_in_schema=False)
 app.include_router(decisions_router)
 app.include_router(onboarding_router)
 app.include_router(health_router)
