@@ -121,7 +121,14 @@ function AppContent() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"
-              element={<Dashboard activeRepo={activeRepo} setActiveRepo={setActiveRepo} />}
+              element={
+                <Dashboard
+                  activeRepo={activeRepo}
+                  setActiveRepo={setActiveRepo}
+                  onOpenTour={() => setTourOpen(true)}
+                  onLoadDemo={handleLoadDemo}
+                />
+              }
             />
             <Route
               path="/repository"

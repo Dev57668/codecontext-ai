@@ -11,7 +11,6 @@ import {
   IconOnboarding,
   IconZap,
   IconChevronDown,
-  IconSparkles,
   IconPlay,
   IconLayers,
   IconMenu,
@@ -106,6 +105,7 @@ export function TopNavbar({ activeRepo, onLoadDemo, loadingDemo, onOpenTour }) {
   }, [location.pathname]);
 
   const analysis = activeRepo?.analysis_result;
+  const isDemo = activeRepo?.id === 'repo-shopflow-demo' || activeRepo?.is_demo || activeRepo?.name?.toLowerCase().includes('shopflow');
   const healthScore = analysis?.health_score || 87;
 
   const getScoreColorClass = (score) => {
@@ -145,17 +145,28 @@ export function TopNavbar({ activeRepo, onLoadDemo, loadingDemo, onOpenTour }) {
           {/* Repository Selector Dropdown */}
           <div className="repo-selector-container" ref={dropdownRef}>
             <button
-              className={`repo-selector-btn ${activeRepo ? 'active' : 'unselected'} cursor-target`}
+              className={`repo-selector-btn ${activeRepo ? 'active' : 'unselected'} ${isDemo ? 'is-demo-active' : ''} cursor-target`}
               onClick={() => setDropdownOpen(!dropdownOpen)}
               aria-expanded={dropdownOpen}
-              title="Switch repository or reload demo"
+              title={isDemo ? 'Active: ShopFlow Platform Demo Repository' : 'Switch repository or reload demo'}
             >
               <div className="repo-btn-icon">
                 <IconRepository size={14} />
               </div>
-              <span className="repo-name">
-                {activeRepo ? (analysis?.project_name || activeRepo.name) : 'Select Repo'}
-              </span>
+              <div className="repo-btn-info">
+                {isDemo ? (
+                  <span className="repo-demo-indicator">
+                    <span className="repo-demo-dot" /> DEMO REPOSITORY
+                  </span>
+                ) : (
+                  <span className="repo-label">
+                    {activeRepo ? 'ACTIVE REPO' : 'NO REPOSITORY'}
+                  </span>
+                )}
+                <span className="repo-name">
+                  {activeRepo ? (analysis?.project_name || activeRepo.name) : 'Select Repo'}
+                </span>
+              </div>
               <IconChevronDown size={12} className={`dropdown-chevron ${dropdownOpen ? 'open' : ''}`} />
             </button>
 
@@ -163,8 +174,8 @@ export function TopNavbar({ activeRepo, onLoadDemo, loadingDemo, onOpenTour }) {
               <div className="repo-dropdown-menu fade-in">
                 <div className="repo-dropdown-header">
                   <span className="dropdown-title">Active Repository</span>
-                  <span className="dropdown-status-tag">
-                    {activeRepo ? 'SYNCED' : 'NONE'}
+                  <span className={`dropdown-status-tag ${isDemo ? 'demo-tag' : ''}`}>
+                    {isDemo ? '● DEMO REPO' : activeRepo ? 'SYNCED' : 'NONE'}
                   </span>
                 </div>
 
@@ -295,14 +306,15 @@ export function TopNavbar({ activeRepo, onLoadDemo, loadingDemo, onOpenTour }) {
             <span className="backend-status-text">{apiOnline ? 'API 8000' : 'Offline'}</span>
           </div>
 
-          {/* Hackathon Tour CTA */}
+          {/* Judge Demo Walkthrough CTA */}
           <button
-            className="btn btn-tour-trigger cursor-target"
+            className="btn btn-run-demo-nav cursor-target"
             onClick={onOpenTour}
-            title="Open interactive walkthrough for IBM Bob 2.0 Hackathon"
+            title="Launch 6-step guided walkthrough for hackathon judges"
+            id="navbar-run-demo-btn"
           >
-            <IconSparkles size={13} className="tour-sparkle-icon" />
-            <span>Tour</span>
+            <span className="run-demo-symbol">▶</span>
+            <span>RUN DEMO</span>
           </button>
 
           {/* Quick Demo CTA if not loaded */}

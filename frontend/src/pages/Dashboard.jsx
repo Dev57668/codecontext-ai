@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { repositoryApi, healthApi, guardrailsApi, decisionsApi } from '../services/api';
+import { repositoryApi, healthApi, guardrailsApi, decisionsApi, prApi } from '../services/api';
 import ScrollExpand from '../components/ScrollExpand';
 import {
   IconShield,
@@ -26,10 +26,11 @@ const WORKFLOW_STEPS = [
   { step: 7, route: '/onboarding', icon: IconOnboarding, title: 'Developer Guidance', desc: 'Personalized onboarding paths' },
 ];
 
-export default function Dashboard({ activeRepo, setActiveRepo }) {
+export default function Dashboard({ activeRepo, setActiveRepo, onOpenTour, onLoadDemo }) {
   const [health, setHealth] = useState(null);
   const [guardrailSummary, setGuardrailSummary] = useState(null);
   const [decisionsCount, setDecisionsCount] = useState(0);
+  const [demoPrRisk, setDemoPrRisk] = useState(87);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,14 +44,18 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
     setLoading(true);
     setError(null);
     try {
-      const [h, g, d] = await Promise.all([
-        healthApi.get(activeRepo.id),
-        guardrailsApi.getSummary(activeRepo.id),
-        decisionsApi.list(activeRepo.id),
+      const [h, g, d, prData] = await Promise.all([
+        healthApi.get(activeRepo.id).catch(() => null),
+        guardrailsApi.getSummary(activeRepo.id).catch(() => null),
+        decisionsApi.list(activeRepo.id).catch(() => []),
+        prApi.getDemo().catch(() => null),
       ]);
-      setHealth(h);
-      setGuardrailSummary(g);
+      if (h) setHealth(h);
+      if (g) setGuardrailSummary(g);
       setDecisionsCount(d?.length || 0);
+      if (prData?.analysis?.risk_score) {
+        setDemoPrRisk(prData.analysis.risk_score);
+      }
     } catch (e) {
       // If the backend returned 404/not found, re-sync repository list or load demo
       if (e.message?.toLowerCase().includes('not found') || e.message?.toLowerCase().includes('404')) {
@@ -91,9 +96,13 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
     }
   }
 
-  const overallHealth = health?.overall_score || analysis?.health_score || 87;
-  const violationCount = guardrailSummary?.summary?.total || analysis?.potential_risks?.length || 5;
-  const highViolations = guardrailSummary?.summary?.HIGH || 3;
+  const isDemo = activeRepo?.id === 'repo-shopflow-demo' || activeRepo?.is_demo || activeRepo?.name?.toLowerCase().includes('shopflow');
+  const overallHealth = health?.overall_score || analysis?.health_score || 71;
+  const archScore = health?.metrics?.find((m) => m.name.toLowerCase().includes('architecture'))?.score || analysis?.health_score || 71;
+  const violationCount = guardrailSummary?.summary?.total ?? analysis?.potential_risks?.length ?? 5;
+  const highViolations = guardrailSummary?.summary?.HIGH ?? 3;
+  const prRiskScore = demoPrRisk || 87;
+  const dependenciesCount = analysis?.dependencies?.length || 15;
   const patternCount = analysis?.detected_patterns?.length || 6;
   const filesCount = analysis?.total_files || 83;
   const locCount = analysis?.total_lines?.toLocaleString() || '12,847';
@@ -113,6 +122,11 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
             <span className="linear-kicker-text">
               CODECONTEXT AI &bull; INTELLIGENCE ENGINE &bull; IBM BOB 2.0
             </span>
+            {isDemo && (
+              <span className="hero-demo-kicker-pill">
+                <span className="hero-demo-kicker-dot" /> DEMO REPOSITORY &bull; {analysis?.project_name || activeRepo?.name || 'ShopFlow Platform'}
+              </span>
+            )}
           </div>
 
           <h1 className="linear-hero-headline molten-hero-headline">
@@ -156,26 +170,32 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </div>
 
           <div className="linear-hero-actions">
-            {!activeRepo ? (
-              <button
-                className="btn btn-primary btn-lg cursor-target"
-                onClick={handleLoadDemo}
-                disabled={demoLoading}
-                id="hero-load-demo-btn"
-              >
-                <IconPlay size={16} />
-                <span>{demoLoading ? 'Ingesting Codebase…' : 'Load ShopFlow Platform Demo'}</span>
-              </button>
-            ) : (
-              <button
-                className="btn btn-primary btn-lg cursor-target"
-                onClick={() => navigate('/pr-review')}
-                id="hero-pr-review-btn"
-              >
-                <IconPRReview size={16} />
-                <span>Review Pull Request</span>
-              </button>
-            )}
+            {/* Primary Judge Demo Entry Point */}
+            <button
+              className="btn btn-primary btn-lg cursor-target btn-hero-run-demo"
+              onClick={() => {
+                if (!activeRepo && onLoadDemo) {
+                  onLoadDemo().then(() => { if (onOpenTour) onOpenTour(); });
+                } else if (onOpenTour) {
+                  onOpenTour();
+                }
+              }}
+              id="hero-run-demo-btn"
+              title="Launch guided 6-step evaluation tour for hackathon judges"
+            >
+              <span className="hero-play-symbol">▶</span>
+              <span>RUN DEMO</span>
+              <span className="hero-demo-badge">6 STEPS</span>
+            </button>
+
+            <button
+              className="btn btn-secondary btn-lg cursor-target"
+              onClick={() => navigate('/pr-review')}
+              id="hero-pr-review-btn"
+            >
+              <IconPRReview size={16} />
+              <span>Review Pull Request</span>
+            </button>
 
             <button
               className="btn btn-secondary btn-lg cursor-target"
@@ -194,6 +214,75 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
               <IconShield size={16} />
               <span>Audit Guardrails ({violationCount})</span>
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 2. Unified Codebase Health Summary Strip ─────────────────────────────────── */}
+      <section className="linear-health-summary-section">
+        <div className="card unified-health-card fade-in">
+          <div className="unified-health-left">
+            <div className="unified-health-label-wrap">
+              <span className="unified-health-tag">
+                {isDemo ? '● DEMO REPOSITORY' : 'ACTIVE REPOSITORY'}
+              </span>
+              <h2 className="unified-health-title">CODEBASE HEALTH</h2>
+            </div>
+            <div className="unified-health-score-row">
+              <span className="unified-score-big">{overallHealth}</span>
+              <span className="unified-score-slash">/ 100</span>
+              <span className={`status-pill ${overallHealth >= 70 ? 'pill-good' : 'pill-warning'}`} style={{ marginLeft: 10 }}>
+                {overallHealth >= 70 ? 'HEALTHY' : 'REVIEW'}
+              </span>
+            </div>
+          </div>
+
+          <div className="unified-health-divider" />
+
+          <div className="unified-health-breakdown-grid">
+            <div
+              className="unified-breakdown-item cursor-target"
+              onClick={() => navigate('/architecture')}
+              role="button"
+              tabIndex={0}
+              title="Inspect Architecture Topology"
+            >
+              <span className="breakdown-label">Architecture</span>
+              <span className="breakdown-val">{archScore}</span>
+            </div>
+
+            <div
+              className="unified-breakdown-item cursor-target"
+              onClick={() => navigate('/guardrails')}
+              role="button"
+              tabIndex={0}
+              title="Inspect Guardrail Violations"
+            >
+              <span className="breakdown-label">Guardrails</span>
+              <span className="breakdown-val">{violationCount} violations</span>
+            </div>
+
+            <div
+              className="unified-breakdown-item cursor-target"
+              onClick={() => navigate('/pr-review')}
+              role="button"
+              tabIndex={0}
+              title="Inspect Pull Request Risk Gatekeeper"
+            >
+              <span className="breakdown-label">PR Risk</span>
+              <span className="breakdown-val risk-accent">{prRiskScore}</span>
+            </div>
+
+            <div
+              className="unified-breakdown-item cursor-target"
+              onClick={() => navigate('/repository')}
+              role="button"
+              tabIndex={0}
+              title="Inspect Codebase Dependencies"
+            >
+              <span className="breakdown-label">Dependencies</span>
+              <span className="breakdown-val">{dependenciesCount}</span>
+            </div>
           </div>
         </div>
       </section>
