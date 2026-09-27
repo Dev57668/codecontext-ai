@@ -154,10 +154,41 @@ export function IconChevronDown({ size = 14, className = '', ...props }) {
   );
 }
 
+
 export function IconChevronRight({ size = 14, className = '', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
       <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+export function IconMenu({ size = 18, className = '', ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="18" y2="18" />
+    </svg>
+  );
+}
+
+export function IconPanelCollapse({ size = 15, className = '', ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="m9 15 3-3-3-3" />
+      <path d="M15 3v18" />
+    </svg>
+  );
+}
+
+export function IconPanelExpand({ size = 15, className = '', ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="m15 9-3 3 3 3" />
+      <path d="M9 3v18" />
     </svg>
   );
 }

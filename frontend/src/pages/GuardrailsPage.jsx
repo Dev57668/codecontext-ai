@@ -154,7 +154,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
             Load the ShopFlow demo or scan a local directory to audit architectural guardrail violations, rule constraints, and auto-fixes.
           </p>
           {onLoadDemo && (
-            <button className="btn btn-primary btn-md" onClick={onLoadDemo}>
+            <button className="btn btn-primary btn-md cursor-target" onClick={onLoadDemo}>
               <IconPlay size={16} />
               <span>Load ShopFlow Platform Demo</span>
             </button>
@@ -184,7 +184,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
 
         <div className="dashboard-header-actions">
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm cursor-target"
             onClick={loadData}
             disabled={loading}
             title="Refresh violations from backend"
@@ -300,13 +300,14 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
               return (
                 <div
                   key={rule.id || idx}
+                  className="cursor-target"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '8px 12px',
-                    background: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-                    border: isSelected ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid var(--border-primary)',
+                    background: isSelected ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: isSelected ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid rgba(255, 255, 255, 0.10)',
                     borderRadius: 'var(--radius-xs)',
                     fontSize: 12,
                     cursor: 'pointer',
@@ -316,15 +317,15 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                   title={isSelected ? 'Click to deselect rule' : `Click to filter violations by: ${rule.rule}`}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: isSelected ? '#FB923C' : 'rgba(161, 161, 170, 0.7)' }}>
                       {String(idx + 1).padStart(2, '0')}
                     </span>
-                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 500, color: '#F4F4F5' }}>
                       {rule.rule}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>—</span>
+                    <span style={{ color: 'rgba(161, 161, 170, 0.5)', fontSize: 11 }}>—</span>
                     <span
                       className={`badge ${count > 0 ? 'badge-high' : 'badge-low'}`}
                       style={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}
@@ -350,8 +351,8 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
           style={{
             marginBottom: 20,
             padding: '12px 18px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
+            background: 'var(--accent-orange-tint)',
+            border: '1px solid var(--accent-orange-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -366,8 +367,8 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: '0.12em',
-                background: '#ffffff',
-                color: '#000000',
+                background: 'var(--accent-orange)',
+                color: '#ffffff',
                 padding: '3px 8px',
                 borderRadius: 'var(--radius-xs)',
               }}
@@ -382,7 +383,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
             </span>
           </div>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm cursor-target"
             onClick={() => setSelectedRule(null)}
             style={{ fontSize: 11, padding: '4px 10px' }}
           >
@@ -420,7 +421,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
             {['all', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
               <button
                 key={sev}
-                className={`dep-filter-btn ${severityFilter === sev ? 'active' : ''}`}
+                className={`dep-filter-btn cursor-target ${severityFilter === sev ? 'active' : ''}`}
                 onClick={() => setSeverityFilter(sev)}
               >
                 {sev === 'all' ? 'All Severities' : sev}
@@ -438,7 +439,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
             ].map(({ id, label }) => (
               <button
                 key={id}
-                className={`dep-filter-btn ${statusFilter === id ? 'active' : ''}`}
+                className={`dep-filter-btn cursor-target ${statusFilter === id ? 'active' : ''}`}
                 onClick={() => setStatusFilter(id)}
               >
                 {label}
@@ -449,7 +450,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
           {/* Expand/Collapse Toggle */}
           <div className="view-toggle-btns" style={{ display: 'flex', gap: 6 }}>
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               onClick={expandAll}
               title="Expand all violation cards"
               style={{ fontSize: 11, padding: '4px 8px' }}
@@ -457,7 +458,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
               Expand All
             </button>
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               onClick={collapseAll}
               title="Collapse all violation cards"
               style={{ fontSize: 11, padding: '4px 8px' }}
@@ -488,17 +489,17 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                 style={{
                   borderLeft: `3px solid ${
                     v.severity === 'HIGH'
-                      ? '#ffffff'
+                      ? 'var(--accent-red)'
                       : v.severity === 'MEDIUM'
-                      ? 'rgba(255, 255, 255, 0.4)'
-                      : 'rgba(255, 255, 255, 0.15)'
+                      ? 'var(--accent-orange)'
+                      : 'var(--border-secondary)'
                   }`,
                   marginBottom: 16,
                 }}
               >
                 {/* Violation Header */}
                 <div
-                  className="violation-card-header"
+                  className="violation-card-header cursor-target"
                   onClick={() => toggleExpand(v.id)}
                   style={{ cursor: 'pointer' }}
                 >
@@ -552,7 +553,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                     <IconFileCode size={14} className="location-icon" />
                     <span className="location-path">{fullPath}</span>
                     <button
-                      className="btn-icon-action"
+                      className="btn-icon-action cursor-target"
                       onClick={() => handleCopyPath(v.file_path, v.line_number)}
                       title="Copy path to clipboard"
                     >
@@ -606,14 +607,14 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                         {v.status === 'open' ? (
                           <>
                             <button
-                              className="btn btn-secondary btn-sm"
+                              className="btn btn-secondary btn-sm cursor-target"
                               onClick={() => handleStatusChange(v.id, 'ignored')}
                               disabled={isUpdating}
                             >
                               <span>Ignore Flag</span>
                             </button>
                             <button
-                              className="btn btn-primary btn-sm"
+                              className="btn btn-primary btn-sm cursor-target"
                               onClick={() => handleStatusChange(v.id, 'resolved')}
                               disabled={isUpdating}
                             >
@@ -623,7 +624,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
                           </>
                         ) : (
                           <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm cursor-target"
                             onClick={() => handleStatusChange(v.id, 'open')}
                             disabled={isUpdating}
                           >
@@ -651,7 +652,7 @@ export default function GuardrailsPage({ activeRepo, onLoadDemo }) {
           </p>
           {(searchQuery || severityFilter !== 'all' || statusFilter !== 'all' || selectedRule) && (
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               style={{ marginTop: 14 }}
               onClick={() => {
                 setSearchQuery('');

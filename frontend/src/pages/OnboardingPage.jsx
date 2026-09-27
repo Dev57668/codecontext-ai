@@ -162,7 +162,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
             Load the ShopFlow demo or scan a local directory to generate contextual developer onboarding paths, task checklists, and architectural reading lists.
           </p>
           {onLoadDemo && (
-            <button className="btn btn-primary btn-md" onClick={onLoadDemo}>
+            <button className="btn btn-primary btn-md cursor-target" onClick={onLoadDemo}>
               <IconPlay size={16} />
               <span>Load ShopFlow Platform Demo</span>
             </button>
@@ -190,7 +190,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
 
         <div className="dashboard-header-actions">
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm cursor-target"
             onClick={() => setShowHistory(true)}
             title="View previously generated onboarding plans"
           >
@@ -214,7 +214,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
             <p className="subheading-desc">Configure the new hire's target role, seniority level, and existing stack familiarity</p>
           </div>
           <button
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm cursor-target"
             onClick={handleGenerate}
             disabled={loading}
           >
@@ -230,7 +230,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
             {ROLES.map((r) => (
               <div
                 key={r.id}
-                className={`onboarding-role-card ${role === r.id ? 'active' : ''}`}
+                className={`onboarding-role-card cursor-target ${role === r.id ? 'active' : ''}`}
                 onClick={() => setRole(r.id)}
               >
                 <div className="role-card-title">{r.label}</div>
@@ -247,7 +247,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
             {LEVELS.map((lvl) => (
               <div
                 key={lvl.id}
-                className={`onboarding-role-card ${skillLevel === lvl.id ? 'active' : ''}`}
+                className={`onboarding-role-card cursor-target ${skillLevel === lvl.id ? 'active' : ''}`}
                 onClick={() => setSkillLevel(lvl.id)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -269,7 +269,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                 <button
                   key={tech}
                   type="button"
-                  className={`tech-chip-btn ${selectedTechs.includes(tech) ? 'selected' : ''}`}
+                  className={`tech-chip-btn cursor-target ${selectedTechs.includes(tech) ? 'selected' : ''}`}
                   onClick={() => toggleTech(tech)}
                 >
                   {selectedTechs.includes(tech) && <IconCheck size={12} />}
@@ -421,7 +421,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                               <IconFileCode size={13} style={{ color: 'var(--text-muted)' }} />
                               <span>{p}</span>
                               <button
-                                className="btn-icon-action"
+                                className="btn-icon-action cursor-target"
                                 onClick={() => handleCopy(p)}
                                 title="Copy path"
                               >
@@ -449,7 +449,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                             return (
                               <div
                                 key={taskIdx}
-                                className={`timeline-task-item ${isDone ? 'task-done' : ''}`}
+                                className={`timeline-task-item cursor-target ${isDone ? 'task-done' : ''}`}
                                 onClick={() => toggleTask(taskKey)}
                               >
                                 <input
@@ -492,7 +492,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                         <span className="file-path-text">{file}</span>
                       </div>
                       <button
-                        className="btn-icon-action"
+                        className="btn-icon-action cursor-target"
                         onClick={() => handleCopy(file)}
                         title="Copy file path"
                       >
@@ -564,7 +564,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                 <IconHistory size={18} style={{ color: 'var(--text-primary)' }} />
                 <h3 className="tour-header-title">Saved Onboarding Curricula</h3>
               </div>
-              <button className="btn-icon-close" onClick={() => setShowHistory(false)}>
+              <button className="btn-icon-close cursor-target" onClick={() => setShowHistory(false)}>
                 <IconX size={18} />
               </button>
             </div>
@@ -575,7 +575,7 @@ export default function OnboardingPage({ activeRepo, onLoadDemo }) {
                   {history.map((item) => (
                     <div
                       key={item.id}
-                      className="card history-item-card"
+                      className="card history-item-card cursor-target"
                       style={{
                         padding: '14px 16px',
                         cursor: 'pointer',

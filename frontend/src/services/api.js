@@ -1,15 +1,29 @@
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const defaultBase =
+  typeof window !== 'undefined' && window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8000'
+    : 'http://localhost:8000';
+
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || defaultBase;
 
 async function request(url, options = {}) {
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || 'Request failed');
+  try {
+    const res = await fetch(`${API_BASE}${url}`, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Request failed');
+    }
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+      throw new Error(
+        `Unable to connect to CodeContext AI backend at ${API_BASE}. Please verify the server is running on port 8000.`
+      );
+    }
+    throw err;
   }
-  return res.json();
 }
 
 // ─── Repository ───────────────────────────────────────────────────────────

@@ -15,15 +15,15 @@ import {
 } from '../components/Icons';
 
 const LANGUAGE_COLORS = {
-  Python: '#f5f5f5',
-  TypeScript: '#d4d4d4',
-  JavaScript: '#a3a3a3',
-  SQL: '#858585',
-  YAML: '#6e6e6e',
-  Markdown: '#575757',
-  HTML: '#404040',
-  CSS: '#2b2b2b',
-  Other: '#1f1f1f',
+  Python: '#F97316',
+  TypeScript: '#EA580C',
+  JavaScript: '#18181B',
+  SQL: '#3F3F46',
+  YAML: '#71717A',
+  Markdown: '#A1A1AA',
+  HTML: '#FB923C',
+  CSS: '#C2410C',
+  Other: '#D4D4D8',
 };
 
 export default function RepositoryPage({ activeRepo, setActiveRepo }) {
@@ -114,21 +114,21 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
       <div className="card fade-in" style={{ marginBottom: 28 }}>
         <div className="source-segmented-control">
           <button
-            className={`source-tab-btn ${mode === 'demo' ? 'active' : ''}`}
+            className={`source-tab-btn cursor-target ${mode === 'demo' ? 'active' : ''}`}
             onClick={() => setMode('demo')}
           >
             <IconPlay size={15} />
             <span>Built-in Demo Repository</span>
           </button>
           <button
-            className={`source-tab-btn ${mode === 'path' ? 'active' : ''}`}
+            className={`source-tab-btn cursor-target ${mode === 'path' ? 'active' : ''}`}
             onClick={() => setMode('path')}
           >
             <IconFolder size={15} />
             <span>Local Directory Path</span>
           </button>
           <button
-            className={`source-tab-btn ${mode === 'upload' ? 'active' : ''}`}
+            className={`source-tab-btn cursor-target ${mode === 'upload' ? 'active' : ''}`}
             onClick={() => setMode('upload')}
           >
             <IconServer size={15} />
@@ -150,7 +150,7 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
                 Stripe payment processor, Celery async task workers, and intentional architectural violations ready for audit.
               </p>
             </div>
-            <button className="btn btn-primary" onClick={handleLoadDemo} disabled={loading}>
+            <button className="btn btn-primary cursor-target" onClick={handleLoadDemo} disabled={loading}>
               <IconPlay size={16} />
               <span>{loading ? 'Analyzing Codebase...' : 'Load ShopFlow Platform Demo'}</span>
             </button>
@@ -175,7 +175,7 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
                 Provide the full filesystem path to your repository root containing source files and package manifests.
               </p>
             </div>
-            <button className="btn btn-primary" type="submit" disabled={loading || !path.trim()}>
+            <button className="btn btn-primary cursor-target" type="submit" disabled={loading || !path.trim()}>
               <IconSearch size={16} />
               <span>{loading ? 'Scanning Directory...' : 'Scan & Analyze Codebase'}</span>
             </button>
@@ -188,7 +188,7 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
             <div className="form-group">
               <label className="form-label">Repository Archive (.ZIP)</label>
               <div
-                className="file-dropzone-box"
+                className="file-dropzone-box cursor-target"
                 onClick={() => fileRef.current?.click()}
               >
                 <input
@@ -208,7 +208,7 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
                 </div>
               </div>
             </div>
-            <button className="btn btn-primary" type="submit" disabled={loading || !selectedFileName}>
+            <button className="btn btn-primary cursor-target" type="submit" disabled={loading || !selectedFileName}>
               <IconServer size={16} />
               <span>{loading ? 'Extracting & Scanning...' : 'Upload & Analyze Codebase'}</span>
             </button>
@@ -317,19 +317,19 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
                 <div className="dep-filter-buttons">
                   <IconFilter size={13} style={{ color: 'var(--text-muted)', marginRight: 2 }} />
                   <button
-                    className={`dep-filter-btn ${depFilter === 'all' ? 'active' : ''}`}
+                    className={`dep-filter-btn cursor-target ${depFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setDepFilter('all')}
                   >
                     All ({analysis.dependencies?.length || 0})
                   </button>
                   <button
-                    className={`dep-filter-btn ${depFilter === 'runtime' ? 'active' : ''}`}
+                    className={`dep-filter-btn cursor-target ${depFilter === 'runtime' ? 'active' : ''}`}
                     onClick={() => setDepFilter('runtime')}
                   >
                     Runtime ({runtimeCount})
                   </button>
                   <button
-                    className={`dep-filter-btn ${depFilter === 'dev' ? 'active' : ''}`}
+                    className={`dep-filter-btn cursor-target ${depFilter === 'dev' ? 'active' : ''}`}
                     onClick={() => setDepFilter('dev')}
                   >
                     Dev ({devCount})
@@ -375,7 +375,7 @@ export default function RepositoryPage({ activeRepo, setActiveRepo }) {
                       <span className="file-path-text">{f}</span>
                     </div>
                     <button
-                      className="btn-icon-action"
+                      className="btn-icon-action cursor-target"
                       onClick={() => handleCopyPath(f)}
                       title="Copy path to clipboard"
                     >

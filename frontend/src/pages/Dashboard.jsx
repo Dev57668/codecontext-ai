@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { repositoryApi, healthApi, guardrailsApi, decisionsApi } from '../services/api';
-import {
-  FigureArchitecture,
-  FigureAgents,
-  FigureMemory,
-} from '../components/IsometricFigures';
+import ScrollExpand from '../components/ScrollExpand';
 import {
   IconShield,
   IconLayers,
@@ -56,11 +52,27 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
       setGuardrailSummary(g);
       setDecisionsCount(d?.length || 0);
     } catch (e) {
+      // If the backend returned 404/not found, re-sync repository list or load demo
+      if (e.message?.toLowerCase().includes('not found') || e.message?.toLowerCase().includes('404')) {
+        try {
+          const list = await repositoryApi.list();
+          if (list?.length > 0) {
+            setActiveRepo(list[0]);
+            return;
+          } else {
+            const demoRepo = await repositoryApi.loadDemo();
+            setActiveRepo(demoRepo);
+            return;
+          }
+        } catch {
+          // fall through to setError
+        }
+      }
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [activeRepo]);
+  }, [activeRepo, setActiveRepo]);
 
   useEffect(() => {
     loadDashboardData();
@@ -89,107 +101,147 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
 
   return (
     <div className="page-container linear-dashboard-page">
-      {/* ── 1. Linear Editorial Hero Section ───────────────────────────── */}
-      <section className="linear-hero-section">
-        <div className="linear-kicker-row">
-          <span className="linear-live-dot" />
-          <span className="linear-kicker-text">
-            SYSTEM STATUS: ONLINE &bull; CODECONTEXT INTELLIGENCE ENGINE &bull; IBM BOB 2.0
-          </span>
-        </div>
+      {/* ── 1. Linear Editorial Hero Section (Substantial & Preserved) ───────────────────────────── */}
+      <section className="linear-hero-section molten-hero-card">
+        {/* Subtle Vignette Scrim for Contrast & Text Readability */}
+        <div className="molten-hero-scrim" aria-hidden="true" />
 
-        <h1 className="linear-hero-headline">
-          <span className="linear-hero-white">A new species of architecture tool.</span>{' '}
-          <span className="linear-hero-dim">
-            Purpose-built for modern engineering teams with AI workflows at its core, CodeContext sets a new
-            standard for codebase understanding, pre-merge guardrails, and institutional memory.
-          </span>
-        </h1>
+        {/* Foreground Content */}
+        <div className="molten-hero-content">
+          <div className="linear-kicker-row">
+            <span className="linear-live-dot" />
+            <span className="linear-kicker-text">
+              CODECONTEXT AI &bull; INTELLIGENCE ENGINE &bull; IBM BOB 2.0
+            </span>
+          </div>
 
-        <div className="linear-hero-actions">
-          {!activeRepo ? (
+          <h1 className="linear-hero-headline molten-hero-headline">
+            <span className="linear-hero-white">CODECONTEXT AI</span>
+            <span className="linear-hero-dim">
+              A new species of architecture intelligence. Purpose-built for modern engineering teams with AI workflows at its core, CodeContext sets a new standard for codebase understanding, pre-merge guardrails, and institutional memory.
+            </span>
+          </h1>
+
+          {/* Three Core Architectural Pillars */}
+          <div className="molten-pillars-row">
+            <div className="molten-pillar-card">
+              <div className="molten-pillar-icon">
+                <IconCode size={16} />
+              </div>
+              <div className="molten-pillar-text">
+                <span className="molten-pillar-lead">Understand your</span>
+                <span className="molten-pillar-target">codebase.</span>
+              </div>
+            </div>
+
+            <div className="molten-pillar-card">
+              <div className="molten-pillar-icon">
+                <IconLayers size={16} />
+              </div>
+              <div className="molten-pillar-text">
+                <span className="molten-pillar-lead">Understand your</span>
+                <span className="molten-pillar-target">architecture.</span>
+              </div>
+            </div>
+
+            <div className="molten-pillar-card">
+              <div className="molten-pillar-icon">
+                <IconDecisions size={16} />
+              </div>
+              <div className="molten-pillar-text">
+                <span className="molten-pillar-lead">Understand your</span>
+                <span className="molten-pillar-target">engineering decisions.</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="linear-hero-actions">
+            {!activeRepo ? (
+              <button
+                className="btn btn-primary btn-lg cursor-target"
+                onClick={handleLoadDemo}
+                disabled={demoLoading}
+                id="hero-load-demo-btn"
+              >
+                <IconPlay size={16} />
+                <span>{demoLoading ? 'Ingesting Codebase…' : 'Load ShopFlow Platform Demo'}</span>
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-lg cursor-target"
+                onClick={() => navigate('/pr-review')}
+                id="hero-pr-review-btn"
+              >
+                <IconPRReview size={16} />
+                <span>Review Pull Request</span>
+              </button>
+            )}
+
             <button
-              className="btn btn-primary btn-lg"
-              onClick={handleLoadDemo}
-              disabled={demoLoading}
-              id="hero-load-demo-btn"
+              className="btn btn-secondary btn-lg cursor-target"
+              onClick={() => navigate('/architecture')}
+              id="hero-explore-arch-btn"
             >
-              <IconPlay size={16} />
-              <span>{demoLoading ? 'Ingesting Codebase…' : 'Load ShopFlow Platform Demo'}</span>
+              <IconLayers size={16} />
+              <span>Explore Architecture Topology</span>
             </button>
-          ) : (
+
             <button
-              className="btn btn-primary btn-lg"
-              onClick={() => navigate('/pr-review')}
-              id="hero-pr-review-btn"
+              className="btn btn-secondary btn-lg cursor-target"
+              onClick={() => navigate('/guardrails')}
+              id="hero-audit-guardrails-btn"
             >
-              <IconPRReview size={16} />
-              <span>Review Pull Request</span>
+              <IconShield size={16} />
+              <span>Audit Guardrails ({violationCount})</span>
             </button>
-          )}
-
-          <button
-            className="btn btn-secondary btn-lg"
-            onClick={() => navigate('/architecture')}
-            id="hero-explore-arch-btn"
-          >
-            <IconLayers size={16} />
-            <span>Explore Architecture Topology</span>
-          </button>
-
-          <button
-            className="btn btn-secondary btn-lg"
-            onClick={() => navigate('/guardrails')}
-            id="hero-audit-guardrails-btn"
-          >
-            <IconShield size={16} />
-            <span>Audit Guardrails ({violationCount})</span>
-          </button>
+          </div>
         </div>
+      </section>
 
-        {/* Executive Codebase Health & Intelligence Strip */}
-        <div className="grid-6 stagger-group" style={{ marginTop: 28, marginBottom: 4 }}>
+      {/* Executive Codebase Health & Intelligence Strip */}
+      <section className="linear-stats-section">
+        <div className="grid-6 stagger-group" style={{ marginTop: 12, marginBottom: 12 }}>
           {/* 1. CODEBASE HEALTH */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/repository')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>Codebase Health</span>
-              <span className={`status-pill ${overallHealth >= 80 ? 'pill-good' : overallHealth >= 60 ? 'pill-warning' : 'pill-critical'}`} style={{ fontSize: 9 }}>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>Codebase Health</span>
+              <span className={`status-pill ${overallHealth >= 80 ? 'pill-good' : overallHealth >= 60 ? 'pill-warning' : 'pill-critical'}`} style={{ fontSize: 10, padding: '2px 8px' }}>
                 {overallHealth >= 80 ? 'HEALTHY' : 'REVIEW'}
               </span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 {overallHealth}
-                <span className="value-max" style={{ fontSize: 12 }}>/100</span>
+                <span className="value-max" style={{ fontSize: 14 }}>/100</span>
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11 }}>{filesCount} files &bull; {locCount} LOC</div>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6 }}>{filesCount} files &bull; {locCount} LOC</div>
             </div>
           </div>
 
           {/* 2. GUARDRAIL VIOLATIONS */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/guardrails')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>Guardrail Violations</span>
-              <span className="badge badge-high" style={{ fontSize: 9, padding: '1px 6px' }}>{highViolations} High</span>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>Guardrail Violations</span>
+              <span className="badge badge-high" style={{ fontSize: 10, padding: '2px 8px' }}>{highViolations} High</span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 {violationCount}
-                <span className="value-max" style={{ fontSize: 12 }}> active</span>
+                <span className="value-max" style={{ fontSize: 14 }}> active</span>
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11, display: 'flex', gap: 6 }}>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6, display: 'flex', gap: 6 }}>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{guardrailSummary?.summary?.HIGH || 3} High</span>
                 <span>&bull;</span>
                 <span>{guardrailSummary?.summary?.MEDIUM || 2} Med</span>
@@ -201,164 +253,210 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
 
           {/* 3. ARCHITECTURE COMPONENTS */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/architecture')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>Architecture</span>
-              <span className="micro-tag" style={{ fontSize: 9 }}>5 TIERS</span>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>Architecture</span>
+              <span className="micro-tag" style={{ fontSize: 10, padding: '2px 8px' }}>5 TIERS</span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 {analysis?.components?.length || 7}
-                <span className="value-max" style={{ fontSize: 12 }}> nodes</span>
+                <span className="value-max" style={{ fontSize: 14 }}> nodes</span>
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11 }}>{patternCount} design patterns</div>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6 }}>{patternCount} design patterns</div>
             </div>
           </div>
 
           {/* 4. PR RISK GATEKEEPER */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/pr-review')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>PR Risk Gatekeeper</span>
-              <span className="badge badge-high" style={{ fontSize: 9, padding: '1px 6px' }}>CRITICAL</span>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>PR Risk Gatekeeper</span>
+              <span className="badge badge-high" style={{ fontSize: 10, padding: '2px 8px' }}>CRITICAL</span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 87
-                <span className="value-max" style={{ fontSize: 12 }}>/100</span>
+                <span className="value-max" style={{ fontSize: 14 }}>/100</span>
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11 }}>Pre-merge AST evaluation</div>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6 }}>Pre-merge AST evaluation</div>
             </div>
           </div>
 
           {/* 5. TECHNICAL DECISIONS */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/decisions')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>Decision Memory</span>
-              <span className="micro-tag" style={{ fontSize: 9 }}>ADR</span>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>Decision Memory</span>
+              <span className="micro-tag" style={{ fontSize: 10, padding: '2px 8px' }}>ADR</span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 {effectiveDecisions}
-                <span className="value-max" style={{ fontSize: 12 }}> records</span>
+                <span className="value-max" style={{ fontSize: 14 }}> records</span>
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11 }}>Context reasoning graph</div>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6 }}>Context reasoning graph</div>
             </div>
           </div>
 
           {/* 6. ONBOARDING STATUS */}
           <div
-            className="card stat-card fade-in"
+            className="card stat-card fade-in cursor-target"
             onClick={() => navigate('/onboarding')}
             role="button"
             tabIndex={0}
-            style={{ cursor: 'pointer', padding: '14px 16px' }}
+            style={{ cursor: 'pointer', padding: '22px 20px', minHeight: 148, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
-            <div className="stat-card-header" style={{ marginBottom: 6 }}>
-              <span className="card-title" style={{ fontSize: 11 }}>Onboarding Status</span>
-              <span className="status-pill pill-good" style={{ fontSize: 9 }}>READY</span>
+            <div className="stat-card-header" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="card-title" style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em' }}>Onboarding Status</span>
+              <span className="status-pill pill-good" style={{ fontSize: 10, padding: '2px 8px' }}>READY</span>
             </div>
             <div className="stat-card-body">
-              <div className="card-value" style={{ fontSize: 24 }}>
+              <div className="card-value" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                 4 Paths
               </div>
-              <div className="card-subtitle" style={{ fontSize: 11 }}>Role-tailored starter plans</div>
+              <div className="card-subtitle" style={{ fontSize: 12.5, marginTop: 6 }}>Role-tailored starter plans</div>
             </div>
           </div>
         </div>
 
         {error && (
           <div className="linear-error-banner">
-            <span>{error}</span>
+            <div className="error-banner-content">
+              <span className="error-badge">BACKEND CONNECTION</span>
+              <span className="error-message">{error}</span>
+            </div>
+            <div className="error-actions">
+              <button
+                className="btn btn-secondary btn-xs cursor-target"
+                onClick={loadDashboardData}
+                disabled={loading}
+              >
+                <IconRefresh size={12} className={loading ? 'spin-icon' : ''} />
+                <span>Retry Sync</span>
+              </button>
+              <button
+                className="btn btn-primary btn-xs cursor-target"
+                onClick={handleLoadDemo}
+                disabled={demoLoading}
+              >
+                <IconPlay size={12} />
+                <span>{demoLoading ? 'Ingesting…' : 'Load ShopFlow Demo'}</span>
+              </button>
+            </div>
           </div>
         )}
       </section>
 
-      {/* ── 2. Three Technical Wireframe Figures (FIG 0.1, 0.2, 0.3) ───── */}
-      <section className="linear-figures-section">
-        <div className="linear-figures-grid">
-          {/* FIG 0.1 */}
-          <div
-            className="linear-figure-col"
-            onClick={() => navigate('/architecture')}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="linear-fig-tag">FIG 0.1 / MULTI-TIER TOPOLOGY</div>
-            <div className="linear-fig-canvas">
-              <FigureArchitecture size={210} />
+      {/* ── 2. Cinematic Architecture ScrollExpand Section ───────────── */}
+      <section className="linear-scrollexpand-section" aria-label="Architecture Topology Interactive Map">
+        <ScrollExpand
+          backgroundComponent={<div className="se-lens-viewport" />}
+          title={
+            <div className="se-title-pill-wrap">
+              <span className="se-title-badge">
+                <span className="se-live-dot" />
+                <span>ARCHITECTURE VISUALIZATION</span>
+              </span>
+              <span className="se-title-text">Understand your codebase.</span>
             </div>
-            <h3 className="linear-fig-title">Layered Architecture Mapping</h3>
-            <p className="linear-fig-desc">
-              Identifies Presentation, API, Domain, and Data tiers with strict boundary constraints.
-              Prevents illegal cross-tier coupling before code merges.
-            </p>
-            <div className="linear-fig-action">
-              <span>Explore 5 Tiers</span>
-              <IconArrowRight size={13} />
+          }
+          scrollHint={
+            <span className="se-hint-badge">
+              <span className="se-hint-text">Scroll to explore</span>
+              <span className="se-hint-arrow" aria-hidden="true">↓</span>
+            </span>
+          }
+          useWindowScroll
+          stageHeight={660}
+          startWidth={78}
+          startHeight={72}
+          startRadius={16}
+          endRadius={14}
+          mediaZoom={1.04}
+          scrollDistance={0.65}
+          holdDistance={0.25}
+          smoothing={0.05}
+          overlayScrim={0.50}
+          className="codecontext-scrollexpand"
+        >
+          <div className="se-overlay-container">
+            <div className="se-overlay-badge">
+              <span className="se-live-dot" />
+              <span className="se-badge-text">AUTONOMOUS ARCHITECTURE INTELLIGENCE</span>
             </div>
-          </div>
 
-          {/* FIG 0.2 */}
-          <div
-            className="linear-figure-col"
-            onClick={() => navigate('/guardrails')}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="linear-fig-tag">FIG 0.2 / PREDICTIVE GATEKEEPER</div>
-            <div className="linear-fig-canvas">
-              <FigureAgents size={210} />
-            </div>
-            <h3 className="linear-fig-title">Autonomous PR Interception</h3>
-            <p className="linear-fig-desc">
-              Pre-merge AST verification that audits every pull request against institutional rules.
-              Identifies leaked secrets, missing DTOs, and architecture drift.
-            </p>
-            <div className="linear-fig-action">
-              <span>Audit Pre-Merge Rules</span>
-              <IconArrowRight size={13} />
-            </div>
-          </div>
+            <h2 className="se-overlay-headline">
+              Engineering context, connected.
+            </h2>
 
-          {/* FIG 0.3 */}
-          <div
-            className="linear-figure-col"
-            onClick={() => navigate('/decisions')}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="linear-fig-tag">FIG 0.3 / INSTITUTIONAL MEMORY</div>
-            <div className="linear-fig-canvas">
-              <FigureMemory size={210} />
-            </div>
-            <h3 className="linear-fig-title">Decision Memory & ADRs</h3>
-            <p className="linear-fig-desc">
-              Synthesizes past RFCs, merge discussions, and ADRs into an active context graph.
-              Generates role-based onboarding paths in seconds.
+            <p className="se-overlay-subhead">
+              Understand architecture, review pre-merge risk, preserve institutional decisions,
+              and onboard developers with live AST intelligence from your codebase.
             </p>
-            <div className="linear-fig-action">
-              <span>Search ADR Memory</span>
-              <IconArrowRight size={13} />
+
+            <div className="se-overlay-pills-row">
+              <div className="se-pill-item">
+                <span className="se-pill-label">TIERS MAPPED</span>
+                <span className="se-pill-val">5 Architectural Layers</span>
+              </div>
+              <div className="se-pill-item">
+                <span className="se-pill-label">GATEKEEPER</span>
+                <span className="se-pill-val">Rule SEC-02 Intercept</span>
+              </div>
+              <div className="se-pill-item">
+                <span className="se-pill-label">MEMORY</span>
+                <span className="se-pill-val">ADR-003 Linked</span>
+              </div>
+              <div className="se-pill-item">
+                <span className="se-pill-label">CODEBASE</span>
+                <span className="se-pill-val">{filesCount} Files &bull; {locCount} LOC</span>
+              </div>
+            </div>
+
+            <div className="se-overlay-actions">
+              <button
+                className="btn btn-primary btn-md cursor-target"
+                onClick={() => navigate('/architecture')}
+                id="se-explore-arch-btn"
+              >
+                <IconLayers size={15} />
+                <span>Explore Architecture Topology</span>
+              </button>
+              <button
+                className="btn btn-secondary btn-md cursor-target"
+                onClick={() => navigate('/guardrails')}
+                id="se-audit-guardrails-btn"
+              >
+                <IconShield size={15} />
+                <span>Audit Guardrail Violations ({violationCount})</span>
+              </button>
+              <button
+                className="btn btn-secondary btn-md cursor-target"
+                onClick={() => navigate('/pr-review')}
+                id="se-inspect-pr-btn"
+              >
+                <IconPRReview size={15} />
+                <span>Inspect PR Intelligence</span>
+              </button>
             </div>
           </div>
-        </div>
+        </ScrollExpand>
       </section>
 
       {/* ── 3. The Hero Product Workbench (Screenshot 2 Inspiration) ─── */}
@@ -384,7 +482,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
             {/* Interactive Workbench Tabs */}
             <div className="workbench-tabs">
               <button
-                className={`workbench-tab ${activeWorkbenchTab === 'pr_intercept' ? 'active' : ''}`}
+                className={`workbench-tab ${activeWorkbenchTab === 'pr_intercept' ? 'active' : ''} cursor-target`}
                 onClick={() => setActiveWorkbenchTab('pr_intercept')}
               >
                 <IconPRReview size={13} />
@@ -393,7 +491,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
               </button>
 
               <button
-                className={`workbench-tab ${activeWorkbenchTab === 'architecture' ? 'active' : ''}`}
+                className={`workbench-tab ${activeWorkbenchTab === 'architecture' ? 'active' : ''} cursor-target`}
                 onClick={() => setActiveWorkbenchTab('architecture')}
               >
                 <IconLayers size={13} />
@@ -401,7 +499,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
               </button>
 
               <button
-                className={`workbench-tab ${activeWorkbenchTab === 'decisions' ? 'active' : ''}`}
+                className={`workbench-tab ${activeWorkbenchTab === 'decisions' ? 'active' : ''} cursor-target`}
                 onClick={() => setActiveWorkbenchTab('decisions')}
               >
                 <IconDecisions size={13} />
@@ -409,7 +507,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
               </button>
 
               <button
-                className={`workbench-tab ${activeWorkbenchTab === 'telemetry' ? 'active' : ''}`}
+                className={`workbench-tab ${activeWorkbenchTab === 'telemetry' ? 'active' : ''} cursor-target`}
                 onClick={() => setActiveWorkbenchTab('telemetry')}
               >
                 <IconTerminal size={13} />
@@ -670,7 +768,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
                 </div>
 
                 <button
-                  className="btn btn-primary btn-sm btn-agent-action"
+                  className="btn btn-primary btn-sm btn-agent-action cursor-target"
                   onClick={() => navigate('/pr-review')}
                 >
                   <IconPRReview size={13} />
@@ -686,7 +784,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
       <section className="linear-ribbon-section">
         <div className="linear-metric-ribbon">
           <div
-            className="ribbon-metric-col"
+            className="ribbon-metric-col cursor-target"
             onClick={() => navigate('/architecture')}
             role="button"
             tabIndex={0}
@@ -698,7 +796,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </div>
 
           <div
-            className="ribbon-metric-col"
+            className="ribbon-metric-col cursor-target"
             onClick={() => navigate('/guardrails')}
             role="button"
             tabIndex={0}
@@ -710,7 +808,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </div>
 
           <div
-            className="ribbon-metric-col"
+            className="ribbon-metric-col cursor-target"
             onClick={() => navigate('/architecture')}
             role="button"
             tabIndex={0}
@@ -722,7 +820,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </div>
 
           <div
-            className="ribbon-metric-col"
+            className="ribbon-metric-col cursor-target"
             onClick={() => navigate('/decisions')}
             role="button"
             tabIndex={0}
@@ -734,7 +832,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
           </div>
 
           <div
-            className="ribbon-metric-col"
+            className="ribbon-metric-col cursor-target"
             onClick={() => navigate('/repository')}
             role="button"
             tabIndex={0}
@@ -763,7 +861,7 @@ export default function Dashboard({ activeRepo, setActiveRepo }) {
             return (
               <div
                 key={s.step}
-                className="linear-workflow-card"
+                className="linear-workflow-card cursor-target"
                 onClick={() => {
                   if (!activeRepo) {
                     handleLoadDemo().then(() => navigate(s.route));

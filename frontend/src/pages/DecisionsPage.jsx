@@ -216,7 +216,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
             Load the ShopFlow demo or scan a local directory to browse and record architecture decision records (ADRs) and extract institutional memory.
           </p>
           {onLoadDemo && (
-            <button className="btn btn-primary btn-md" onClick={onLoadDemo}>
+            <button className="btn btn-primary btn-md cursor-target" onClick={onLoadDemo}>
               <IconPlay size={16} />
               <span>Load ShopFlow Platform Demo</span>
             </button>
@@ -246,7 +246,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
 
         <div className="dashboard-header-actions">
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm cursor-target"
             onClick={() => setShowExtractModal(true)}
             title="Extract structured ADR from Slack, PR notes, or commit message"
           >
@@ -254,7 +254,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
             <span>AI Extract from Text</span>
           </button>
           <button
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm cursor-target"
             onClick={() => setShowCreateModal(true)}
           >
             <IconPlus size={14} />
@@ -264,8 +264,8 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
       </div>
 
       {error && (
-        <div className="card fade-in" style={{ borderColor: 'rgba(255,255,255,0.2)', marginBottom: 20 }}>
-          <p style={{ color: 'var(--text-primary)', fontSize: 13 }}>{error}</p>
+        <div className="card fade-in" style={{ borderColor: 'var(--accent-red)', background: 'var(--accent-red-soft)', marginBottom: 20 }}>
+          <p style={{ color: 'var(--accent-red)', fontSize: 13, fontWeight: 500 }}>{error}</p>
         </div>
       )}
 
@@ -344,7 +344,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
             {['all', 'active', 'superseded'].map((status) => (
               <button
                 key={status}
-                className={`dep-filter-btn ${statusFilter === status ? 'active' : ''}`}
+                className={`dep-filter-btn cursor-target ${statusFilter === status ? 'active' : ''}`}
                 onClick={() => setStatusFilter(status)}
               >
                 {status === 'all' ? 'All Status' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -354,14 +354,14 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
 
           <div style={{ display: 'flex', gap: 6 }}>
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               onClick={() => setExpandedIds(new Set(decisions.map((d) => d.id)))}
               style={{ fontSize: 11, padding: '4px 8px' }}
             >
               Expand All
             </button>
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               onClick={() => setExpandedIds(new Set())}
               style={{ fontSize: 11, padding: '4px 8px' }}
             >
@@ -395,7 +395,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
               >
                 {/* Decision Header */}
                 <div
-                  className="decision-card-header"
+                  className="decision-card-header cursor-target"
                   onClick={() => toggleExpand(d.id)}
                   style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                 >
@@ -500,7 +500,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
                               <IconFileCode size={13} style={{ color: 'var(--text-muted)' }} />
                               <span>{comp}</span>
                               <button
-                                className="btn-icon-action"
+                                className="btn-icon-action cursor-target"
                                 onClick={() => handleCopyPath(comp)}
                                 title="Copy path"
                               >
@@ -534,7 +534,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
           </p>
           {(searchQuery || statusFilter !== 'all') && (
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               style={{ marginTop: 14 }}
               onClick={() => {
                 setSearchQuery('');
@@ -562,7 +562,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
                 <IconSparkles size={18} style={{ color: 'var(--text-primary)' }} />
                 <h3 className="tour-header-title">Extract Architecture Decision from Free-Form Text</h3>
               </div>
-              <button className="btn-icon-close" onClick={() => setShowExtractModal(false)}>
+              <button className="btn-icon-close cursor-target" onClick={() => setShowExtractModal(false)}>
                 <IconX size={18} />
               </button>
             </div>
@@ -583,7 +583,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
                     <button
                       key={tmpl.name}
                       type="button"
-                      className="btn btn-secondary btn-sm"
+                      className="btn btn-secondary btn-sm cursor-target"
                       style={{ fontSize: 11, padding: '4px 9px' }}
                       onClick={() => setExtractText(tmpl.text)}
                     >
@@ -608,14 +608,14 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm cursor-target"
                   onClick={() => setShowExtractModal(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-sm cursor-target"
                   onClick={handleExtract}
                   disabled={extracting || !extractText.trim()}
                 >
@@ -643,7 +643,7 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
                 <IconPlus size={18} style={{ color: 'var(--text-primary)' }} />
                 <h3 className="tour-header-title">Register Architecture Decision Record</h3>
               </div>
-              <button className="btn-icon-close" onClick={() => setShowCreateModal(false)}>
+              <button className="btn-icon-close cursor-target" onClick={() => setShowCreateModal(false)}>
                 <IconX size={18} />
               </button>
             </div>
@@ -746,12 +746,12 @@ export default function DecisionsPage({ activeRepo, onLoadDemo }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm cursor-target"
                   onClick={() => setShowCreateModal(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
+                <button type="submit" className="btn btn-primary btn-sm cursor-target" disabled={loading}>
                   Save Decision Record
                 </button>
               </div>

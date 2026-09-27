@@ -226,7 +226,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
             Load the ShopFlow demo or scan a local directory to visualize the multi-tier architecture topology, component nodes, and guardrails.
           </p>
           {onLoadDemo && (
-            <button className="btn btn-primary btn-md" onClick={onLoadDemo}>
+            <button className="btn btn-primary btn-md cursor-target" onClick={onLoadDemo}>
               <IconPlay size={16} />
               <span>Load ShopFlow Platform Demo</span>
             </button>
@@ -255,11 +255,11 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
         </div>
 
         <div className="dashboard-header-actions">
-          <button className="btn btn-secondary btn-sm" onClick={loadData} disabled={loading} title="Refresh architecture data">
+          <button className="btn btn-secondary btn-sm cursor-target" onClick={loadData} disabled={loading} title="Refresh architecture data">
             <IconRefresh size={14} className={loading ? 'spin-icon' : ''} />
             <span>Reload Map</span>
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddRuleModal(true)}>
+          <button className="btn btn-primary btn-sm cursor-target" onClick={() => setShowAddRuleModal(true)}>
             <IconPlus size={14} />
             <span>Add Rule</span>
           </button>
@@ -328,13 +328,13 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                             !isConnected
                           );
 
-                          // Explicit inline visual styling to ensure contrast and unmistakable visibility
+                          // Explicit visual styling to ensure contrast and unmistakable visibility
                           let cardStyle = {};
                           if (isHovered) {
                             cardStyle = {
-                              borderColor: '#ffffff',
-                              backgroundColor: '#202020',
-                              boxShadow: '0 0 0 2px #ffffff, 0 12px 32px rgba(0, 0, 0, 0.9)',
+                              borderColor: 'var(--orange-primary, #F97316)',
+                              backgroundColor: 'rgba(249, 115, 22, 0.12)',
+                              boxShadow: '0 0 0 2px rgba(249, 115, 22, 0.4), 0 12px 32px rgba(0, 0, 0, 0.7)',
                               transform: 'translateY(-3px) scale(1.02)',
                               opacity: 1,
                               zIndex: 10,
@@ -342,18 +342,18 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                             };
                           } else if (isSelected) {
                             cardStyle = {
-                              borderColor: '#ffffff',
-                              backgroundColor: '#1c1c1c',
-                              boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.45), 0 8px 24px rgba(0, 0, 0, 0.85)',
+                              borderColor: 'var(--orange-primary, #F97316)',
+                              backgroundColor: 'rgba(249, 115, 22, 0.18)',
+                              boxShadow: '0 0 0 2px rgba(249, 115, 22, 0.5), 0 8px 24px rgba(0, 0, 0, 0.6)',
                               opacity: 1,
                               zIndex: 8,
                               transition: 'all 0.18s ease-out',
                             };
                           } else if (isConnected) {
                             cardStyle = {
-                              borderColor: 'rgba(255, 255, 255, 0.85)',
-                              backgroundColor: '#181818',
-                              boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6)',
+                              borderColor: 'rgba(249, 115, 22, 0.5)',
+                              backgroundColor: 'rgba(249, 115, 22, 0.08)',
+                              boxShadow: '0 0 0 1px rgba(249, 115, 22, 0.3), 0 6px 20px rgba(0, 0, 0, 0.5)',
                               transform: 'translateY(-1px)',
                               opacity: 1,
                               zIndex: 6,
@@ -361,7 +361,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                             };
                           } else if (isDimmed) {
                             cardStyle = {
-                              opacity: 0.38,
+                              opacity: 0.35,
                               filter: 'grayscale(0.85)',
                               transform: 'scale(0.98)',
                               borderColor: 'rgba(255, 255, 255, 0.05)',
@@ -375,7 +375,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                               role="button"
                               tabIndex={0}
                               aria-label={`Inspect ${comp.name} architectural component`}
-                              className={`topology-node-card ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''} ${isConnected ? 'connected' : ''} ${isDimmed ? 'dimmed' : ''}`}
+                              className={`topology-node-card cursor-target ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''} ${isConnected ? 'connected' : ''} ${isDimmed ? 'dimmed' : ''}`}
                               style={cardStyle}
                               onClick={() => setSelectedComp(comp)}
                               onKeyDown={(e) => {
@@ -485,7 +485,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                     <h3 className="inspector-title">{selectedComp.name}</h3>
                   </div>
                   <button
-                    className="btn-icon-close"
+                    className="btn-icon-close cursor-target"
                     onClick={() => setSelectedComp(null)}
                     aria-label="Close inspector"
                   >
@@ -501,7 +501,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                       <div className="inspector-path-box">
                         <span>{selectedComp.path}</span>
                         <button
-                          className="btn-icon-action"
+                          className="btn-icon-action cursor-target"
                           onClick={() => handleCopy(selectedComp.path)}
                           title="Copy path"
                         >
@@ -552,7 +552,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f}</span>
                           </div>
                           <button
-                            className="btn-icon-action"
+                            className="btn-icon-action cursor-target"
                             onClick={() => handleCopy(f)}
                             title="Copy path"
                           >
@@ -647,7 +647,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
                 {['all', 'HIGH', 'MEDIUM', 'LOW'].map((filter) => (
                   <button
                     key={filter}
-                    className={`btn btn-sm ${ruleFilter === filter ? 'btn-primary' : 'btn-secondary'}`}
+                    className={`btn btn-sm cursor-target ${ruleFilter === filter ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setRuleFilter(filter)}
                   >
                     {filter === 'all' ? 'All Rules' : filter}
@@ -696,7 +696,7 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
           >
             <div className="modal-header">
               <h3 className="tour-header-title">Register Architecture Rule</h3>
-              <button className="btn-icon-close" onClick={() => setShowAddRuleModal(false)}>
+              <button className="btn-icon-close cursor-target" onClick={() => setShowAddRuleModal(false)}>
                 <IconX size={18} />
               </button>
             </div>
@@ -751,12 +751,12 @@ export default function ArchitecturePage({ activeRepo, onLoadDemo }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm cursor-target"
                   onClick={() => setShowAddRuleModal(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary btn-sm">
+                <button type="submit" className="btn btn-primary btn-sm cursor-target">
                   Save Rule
                 </button>
               </div>

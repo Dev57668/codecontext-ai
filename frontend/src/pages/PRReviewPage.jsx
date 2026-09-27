@@ -284,7 +284,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
             Load the ShopFlow demo or scan a local directory to test pull requests against architectural guardrails and run automated reviews.
           </p>
           {onLoadDemo && (
-            <button className="btn btn-primary btn-md" onClick={onLoadDemo}>
+            <button className="btn btn-primary btn-md cursor-target" onClick={onLoadDemo}>
               <IconPlay size={16} />
               <span>Load ShopFlow Platform Demo</span>
             </button>
@@ -314,7 +314,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
 
         <div className="dashboard-header-actions">
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm cursor-target"
             onClick={() => setShowHistory(true)}
             title="View past PR analysis history"
           >
@@ -322,7 +322,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
             <span>PR History ({history.length})</span>
           </button>
           <button
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm cursor-target"
             onClick={handleLoadDemo}
             disabled={loading}
           >
@@ -355,7 +355,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
               onChange={handleFileUpload}
             />
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm cursor-target"
               onClick={() => fileInputRef.current?.click()}
             >
               <IconUpload size={13} />
@@ -363,7 +363,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
             </button>
             {diff && (
               <button
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-sm cursor-target"
                 onClick={() => {
                   setDiff('');
                   setTitle('');
@@ -389,7 +389,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
 
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
             <button
-              className="btn btn-primary"
+              className="btn btn-primary cursor-target"
               onClick={handleAnalyze}
               disabled={loading || !diff.trim()}
               style={{ width: '100%', maxWidth: 220 }}
@@ -486,25 +486,25 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
           {/* Navigation Sub-Tabs */}
           <div className="pr-subtabs-row" style={{ marginBottom: 20 }}>
             <button
-              className={`pr-subtab-btn ${activeTab === 'ide' ? 'active' : ''}`}
+              className={`pr-subtab-btn cursor-target ${activeTab === 'ide' ? 'active' : ''}`}
               onClick={() => setActiveTab('ide')}
             >
               <span>3-Column Review Workspace</span>
             </button>
             <button
-              className={`pr-subtab-btn ${activeTab === 'diff' ? 'active' : ''}`}
+              className={`pr-subtab-btn cursor-target ${activeTab === 'diff' ? 'active' : ''}`}
               onClick={() => setActiveTab('diff')}
             >
               <span>Interactive Diff Viewer</span>
             </button>
             <button
-              className={`pr-subtab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+              className={`pr-subtab-btn cursor-target ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
               <span>Findings & Violations ({analysis.violations?.length || 0})</span>
             </button>
             <button
-              className={`pr-subtab-btn ${activeTab === 'checklist' ? 'active' : ''}`}
+              className={`pr-subtab-btn cursor-target ${activeTab === 'checklist' ? 'active' : ''}`}
               onClick={() => setActiveTab('checklist')}
             >
               <span>Reviewer Checklist ({analysis.reviewer_questions?.length || 0})</span>
@@ -524,7 +524,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                   {parsedFiles.map((file, idx) => (
                     <button
                       key={idx}
-                      className={`pr-file-list-btn ${selectedFileIdx === idx ? 'active' : ''}`}
+                      className={`pr-file-list-btn cursor-target ${selectedFileIdx === idx ? 'active' : ''}`}
                       onClick={() => {
                         setSelectedFileIdx(idx);
                         setFocusedLine(null);
@@ -562,7 +562,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {focusedLine && (
                       <button
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm cursor-target"
                         onClick={() => setFocusedLine(null)}
                         style={{ fontSize: 10, padding: '2px 8px' }}
                       >
@@ -570,7 +570,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                       </button>
                     )}
                     <button
-                      className="btn btn-secondary btn-sm"
+                      className="btn btn-secondary btn-sm cursor-target"
                       onClick={() => copyToClipboard(diff)}
                       title="Copy diff patch"
                       style={{ fontSize: 11, padding: '3px 8px', flexShrink: 0 }}
@@ -630,7 +630,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     />
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                    Gatekeeper Status: <strong style={{ color: '#ffffff' }}>MERGE BLOCKED</strong>
+                    Gatekeeper Status: <strong style={{ color: 'var(--accent-red)' }}>MERGE BLOCKED</strong>
                   </div>
                 </div>
 
@@ -644,17 +644,18 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     {analysis.violations?.map((v, i) => (
                       <div
                         key={i}
+                        className="cursor-target"
                         onClick={() => handleFocusFinding(v)}
                         style={{
                           padding: 10,
-                          background: 'rgba(255,255,255,0.02)',
+                          background: '#FAFAF9',
                           border: '1px solid var(--border-primary)',
                           borderLeft: `3px solid ${
                             v.severity === 'CRITICAL'
-                              ? '#ffffff'
+                              ? 'var(--accent-red)'
                               : v.severity === 'HIGH'
-                              ? 'rgba(255, 255, 255, 0.6)'
-                              : 'rgba(255, 255, 255, 0.3)'
+                              ? 'var(--accent-orange)'
+                              : 'var(--border-secondary)'
                           }`,
                           borderRadius: 'var(--radius-xs)',
                           cursor: 'pointer',
@@ -726,10 +727,10 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                         style={{
                           borderLeft: `3px solid ${
                             v.severity === 'CRITICAL'
-                              ? '#ffffff'
+                              ? 'var(--accent-red)'
                               : v.severity === 'HIGH'
-                              ? 'rgba(255, 255, 255, 0.5)'
-                              : 'rgba(255, 255, 255, 0.2)'
+                              ? 'var(--accent-orange)'
+                              : 'var(--border-secondary)'
                           }`,
                         }}
                       >
@@ -745,7 +746,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                           )}
                           {v.line && (
                             <button
-                              className="btn btn-secondary btn-sm"
+                              className="btn btn-secondary btn-sm cursor-target"
                               style={{ fontSize: 10, padding: '2px 8px', marginLeft: 'auto' }}
                               onClick={() => handleFocusFinding(v)}
                             >
@@ -821,7 +822,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     {parsedFiles.map((file, idx) => (
                       <button
                         key={idx}
-                        className={`diff-file-chip ${selectedFileIdx === idx ? 'active' : ''}`}
+                        className={`diff-file-chip cursor-target ${selectedFileIdx === idx ? 'active' : ''}`}
                         onClick={() => {
                           setSelectedFileIdx(idx);
                           setFocusedLine(null);
@@ -935,7 +936,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                     return (
                       <div
                         key={idx}
-                        className={`reviewer-question-item ${isChecked ? 'question-done' : ''}`}
+                        className={`reviewer-question-item cursor-target ${isChecked ? 'question-done' : ''}`}
                         onClick={() => toggleQuestionCheck(idx)}
                       >
                         <input
@@ -973,7 +974,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                 <IconHistory size={18} style={{ color: 'var(--text-primary)' }} />
                 <h3 className="tour-header-title">Pull Request Analysis History</h3>
               </div>
-              <button className="btn-icon-close" onClick={() => setShowHistory(false)}>
+              <button className="btn-icon-close cursor-target" onClick={() => setShowHistory(false)}>
                 <IconX size={18} />
               </button>
             </div>
@@ -984,7 +985,7 @@ export default function PRReviewPage({ activeRepo, onLoadDemo }) {
                   {history.map((item) => (
                     <div
                       key={item.id}
-                      className="card history-item-card"
+                      className="card history-item-card cursor-target"
                       style={{
                         padding: '14px 16px',
                         cursor: 'pointer',
