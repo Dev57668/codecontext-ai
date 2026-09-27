@@ -38,16 +38,22 @@ export function LiquidGlassSurface({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Create the original Liquid Glass JS Container instance
-    const instance = new Container({
-      element: el,
-      borderRadius,
-      type,
-      tintColor,
-      tintOpacity: prefersReducedMotion ? 0.12 : tintOpacity,
-      warp: prefersReducedMotion ? false : warp,
-    });
-    instanceRef.current = instance;
+    // Create the Liquid Glass Container instance with graceful WebGL fallback
+    let instance = null;
+    try {
+      instance = new Container({
+        element: el,
+        borderRadius,
+        type,
+        tintColor,
+        tintOpacity: prefersReducedMotion ? 0.12 : tintOpacity,
+        warp: prefersReducedMotion ? false : warp,
+      });
+      instanceRef.current = instance;
+    } catch {
+      // Graceful fallback to CSS glass when WebGL is unavailable
+      return;
+    }
 
     // Handle dynamic element sizing without duplicate WebGL contexts
     let resizeTimer = null;
